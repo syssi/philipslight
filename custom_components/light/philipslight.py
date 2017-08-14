@@ -2,14 +2,19 @@
 Support for Xiaomi Philips Lights (LED Ball & Ceil).
 """
 import logging
+import math
 
 import voluptuous as vol
 
+from homeassistant.util.color import (
+    color_temperature_mired_to_kelvin as mired_to_kelvin,
+    color_temperature_kelvin_to_mired as kelvin_to_mired)
 
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.light import (
     PLATFORM_SCHEMA, ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS,
     ATTR_COLOR_TEMP, SUPPORT_COLOR_TEMP, Light)
+
 from homeassistant.const import (DEVICE_DEFAULT_NAME, CONF_NAME, CONF_HOST, CONF_TOKEN)
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,10 +25,12 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_NAME): cv.string,
 })
 
-#REQUIREMENTS = ['python-mirobo']
-REQUIREMENTS = ['https://github.com/syssi/python-mirobo/archive/'
-                '87998cad53ad0c5802dc562497a7606983903c57.zip#'
-                'python-mirobo']
+REQUIREMENTS = ['python-mirobo']
+
+# The light does not accept cct values < 1
+CCT_MIN = 1
+CCT_MAX = 100
+
 
 # pylint: disable=unused-argument
 def setup_platform(hass, config, add_devices_callback, discovery_info=None):
@@ -81,6 +88,16 @@ class PhilipsLight(Light):
         return self._color_temp
 
     @property
+    def min_mireds(self):
+        """Return the coldest color_temp that this light supports."""
+        return math.floor(kelvin_to_mired(5700))
+
+    @property
+    def max_mireds(self):
+        """Return the warmest color_temp that this light supports."""
+        return math.floor(kelvin_to_mired(3000))
+
+    @property
     def supported_features(self):
         """Return the supported features."""
         return SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP
@@ -104,8 +121,10 @@ class PhilipsLight(Light):
 
         if ATTR_COLOR_TEMP in kwargs:
             self._color_temp = kwargs[ATTR_COLOR_TEMP]
-            # FIXME: Values outside of 0...100 return an error
-            self.light.set_cct(self._color_temp)
+            percent = self.translate(self._color_temp, self.max_mireds, self.min_mireds, CCT_MIN, CCT_MAX)
+            self.light.set_cct(percent)
+            _LOGGER.debug("Setting color temperature of light %s: %s mireds, %s%% cct",
+                          self.host, self._color_temp, percent)
 
         if self.light.on():
             self._state = True
@@ -124,8 +143,13 @@ class PhilipsLight(Light):
 
             self._state = state.is_on
             self._brightness = int(255 * 0.01 * state.bright)
+            self._color_temp = self.translate(state.cct, CCT_MIN, CCT_MAX, self.max_mireds, self.min_mireds)
 
-            # FIXME: Map the cct range (1 to 100) of the philips light properly
-            self._color_temp = state.cct
         except DeviceException as ex:
             _LOGGER.error("Got exception while fetching the state: %s", ex)
+
+    def translate(self, value, left_min, left_max, right_min, right_max):
+        left_span = left_max - left_min
+        right_span = right_max - right_min
+        value_scaled = float(value - left_min) / float(left_span)
+        return int(right_min + (value_scaled * right_span))
