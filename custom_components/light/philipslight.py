@@ -5,8 +5,11 @@ import logging
 
 import voluptuous as vol
 
+
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.light import (PLATFORM_SCHEMA, ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS, Light)
+from homeassistant.components.light import (
+    PLATFORM_SCHEMA, ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS,
+    ATTR_COLOR_TEMP, SUPPORT_COLOR_TEMP, Light)
 from homeassistant.const import (DEVICE_DEFAULT_NAME, CONF_NAME, CONF_HOST, CONF_TOKEN)
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,6 +45,7 @@ class PhilipsLight(Light):
         self.token = token
 
         self._brightness = 180
+        self._color_temp = None
 
         self._light = None
         self._state = None
@@ -72,9 +76,14 @@ class PhilipsLight(Light):
         return self._brightness
 
     @property
+    def color_temp(self):
+        """Return the color temperature."""
+        return self._color_temp
+
+    @property
     def supported_features(self):
         """Return the supported features."""
-        return SUPPORT_BRIGHTNESS
+        return SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP
 
     @property
     def light(self):
@@ -91,8 +100,12 @@ class PhilipsLight(Light):
         """Turn the light on."""
         if ATTR_BRIGHTNESS in kwargs:
             self._brightness = kwargs[ATTR_BRIGHTNESS]
-            # FIXME: Does the light accept brightness if it's turned off? Does the light turn on?
             self.light.set_bright(int(100 * self._brightness / 255))
+
+        if ATTR_COLOR_TEMP in kwargs:
+            self._color_temp = kwargs[ATTR_COLOR_TEMP]
+            # FIXME: Values outside of 0...100 return an error
+            self.light.set_cct(self._color_temp)
 
         if self.light.on():
             self._state = True
@@ -111,5 +124,8 @@ class PhilipsLight(Light):
 
             self._state = state.is_on
             self._brightness = int(255 * 0.01 * state.bright)
+
+            # FIXME: Map the cct range (1 to 100) of the philips light properly
+            self._color_temp = state.cct
         except DeviceException as ex:
             _LOGGER.error("Got exception while fetching the state: %s", ex)
