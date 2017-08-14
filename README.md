@@ -18,4 +18,4 @@ light:
 ```
 
 # Features
-* Basic functionality: on, off & current state
+* Basic functionality: on, off, current state, brightness and color temperature

@@ -2,11 +2,19 @@
 Support for Xiaomi Philips Lights (LED Ball & Ceil).
 """
 import logging
+import math
 
 import voluptuous as vol
 
+from homeassistant.util.color import (
+    color_temperature_mired_to_kelvin as mired_to_kelvin,
+    color_temperature_kelvin_to_mired as kelvin_to_mired)
+
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.light import (PLATFORM_SCHEMA, ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS, Light)
+from homeassistant.components.light import (
+    PLATFORM_SCHEMA, ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS,
+    ATTR_COLOR_TEMP, SUPPORT_COLOR_TEMP, Light)
+
 from homeassistant.const import (DEVICE_DEFAULT_NAME, CONF_NAME, CONF_HOST, CONF_TOKEN)
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,10 +25,12 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_NAME): cv.string,
 })
 
-#REQUIREMENTS = ['python-mirobo']
-REQUIREMENTS = ['https://github.com/syssi/python-mirobo/archive/'
-                '87998cad53ad0c5802dc562497a7606983903c57.zip#'
-                'python-mirobo']
+REQUIREMENTS = ['python-mirobo']
+
+# The light does not accept cct values < 1
+CCT_MIN = 1
+CCT_MAX = 100
+
 
 # pylint: disable=unused-argument
 def setup_platform(hass, config, add_devices_callback, discovery_info=None):
@@ -42,6 +52,7 @@ class PhilipsLight(Light):
         self.token = token
 
         self._brightness = 180
+        self._color_temp = None
 
         self._light = None
         self._state = None
@@ -72,9 +83,24 @@ class PhilipsLight(Light):
         return self._brightness
 
     @property
+    def color_temp(self):
+        """Return the color temperature."""
+        return self._color_temp
+
+    @property
+    def min_mireds(self):
+        """Return the coldest color_temp that this light supports."""
+        return math.floor(kelvin_to_mired(5700))
+
+    @property
+    def max_mireds(self):
+        """Return the warmest color_temp that this light supports."""
+        return math.floor(kelvin_to_mired(3000))
+
+    @property
     def supported_features(self):
         """Return the supported features."""
-        return SUPPORT_BRIGHTNESS
+        return SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP
 
     @property
     def light(self):
@@ -91,8 +117,14 @@ class PhilipsLight(Light):
         """Turn the light on."""
         if ATTR_BRIGHTNESS in kwargs:
             self._brightness = kwargs[ATTR_BRIGHTNESS]
-            # FIXME: Does the light accept brightness if it's turned off? Does the light turn on?
             self.light.set_bright(int(100 * self._brightness / 255))
+
+        if ATTR_COLOR_TEMP in kwargs:
+            self._color_temp = kwargs[ATTR_COLOR_TEMP]
+            percent = self.translate(self._color_temp, self.max_mireds, self.min_mireds, CCT_MIN, CCT_MAX)
+            self.light.set_cct(percent)
+            _LOGGER.debug("Setting color temperature of light %s: %s mireds, %s%% cct",
+                          self.host, self._color_temp, percent)
 
         if self.light.on():
             self._state = True
@@ -111,5 +143,13 @@ class PhilipsLight(Light):
 
             self._state = state.is_on
             self._brightness = int(255 * 0.01 * state.bright)
+            self._color_temp = self.translate(state.cct, CCT_MIN, CCT_MAX, self.max_mireds, self.min_mireds)
+
         except DeviceException as ex:
             _LOGGER.error("Got exception while fetching the state: %s", ex)
+
+    def translate(self, value, left_min, left_max, right_min, right_max):
+        left_span = left_max - left_min
+        right_span = right_max - right_min
+        value_scaled = float(value - left_min) / float(left_span)
+        return int(right_min + (value_scaled * right_span))
