@@ -24,7 +24,7 @@ REQUIREMENTS = ['https://github.com/syssi/python-mirobo/archive/'
 
 # pylint: disable=unused-argument
 def setup_platform(hass, config, add_devices_callback, discovery_info=None):
-    """Set up the plug from config."""
+    """Set up the light from config."""
     host = config.get(CONF_HOST)
     name = config.get(CONF_NAME)
     token = config.get(CONF_TOKEN)
@@ -78,7 +78,7 @@ class PhilipsLight(Light):
 
     @property
     def light(self):
-        """Property accessor for plug object."""
+        """Property accessor for light object."""
         if not self._light:
             from mirobo import Ceil
             _LOGGER.info("Initializing light with host %s token %s",
@@ -91,8 +91,8 @@ class PhilipsLight(Light):
         """Turn the light on."""
         if ATTR_BRIGHTNESS in kwargs:
             self._brightness = int(100 * kwargs[ATTR_BRIGHTNESS] / 255)
-
-        # TODO: Set brightness
+            # FIXME: Does the light accept brightness if it's turned off? Does the light turn on?
+            self.light.set_bright(self._brightness)
 
         if self.light.on():
             self._state = True
@@ -106,9 +106,10 @@ class PhilipsLight(Light):
         """Fetch state from the device."""
         from mirobo import DeviceException
         try:
-            state = self.plug.status()
+            state = self.light.status()
             _LOGGER.debug("Got state from light (%s): %s", self.host, state)
 
             self._state = state.is_on
+            self._brightness = state.bright
         except DeviceException as ex:
             _LOGGER.error("Got exception while fetching the state: %s", ex)
