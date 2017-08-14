@@ -19,7 +19,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 
 #REQUIREMENTS = ['python-mirobo']
 REQUIREMENTS = ['https://github.com/syssi/python-mirobo/archive/'
-                'ac20c00acc535bab7e1d1b8db4a4a0c542bd8557.zip#'
+                '87998cad53ad0c5802dc562497a7606983903c57.zip#'
                 'python-mirobo']
 
 # pylint: disable=unused-argument
@@ -90,9 +90,9 @@ class PhilipsLight(Light):
     def turn_on(self, **kwargs):
         """Turn the light on."""
         if ATTR_BRIGHTNESS in kwargs:
-            self._brightness = int(100 * kwargs[ATTR_BRIGHTNESS] / 255)
+            self._brightness = kwargs[ATTR_BRIGHTNESS]
             # FIXME: Does the light accept brightness if it's turned off? Does the light turn on?
-            self.light.set_bright(self._brightness)
+            self.light.set_bright(int(100 * self._brightness / 255))
 
         if self.light.on():
             self._state = True
@@ -110,6 +110,6 @@ class PhilipsLight(Light):
             _LOGGER.debug("Got state from light (%s): %s", self.host, state)
 
             self._state = state.is_on
-            self._brightness = state.bright
+            self._brightness = int(255 * 0.01 * state.bright))
         except DeviceException as ex:
             _LOGGER.error("Got exception while fetching the state: %s", ex)
