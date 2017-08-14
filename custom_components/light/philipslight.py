@@ -110,6 +110,6 @@ class PhilipsLight(Light):
             _LOGGER.debug("Got state from light (%s): %s", self.host, state)
 
             self._state = state.is_on
-            self._brightness = int(255 * 0.01 * state.bright))
+            self._brightness = int(255 * 0.01 * state.bright)
         except DeviceException as ex:
             _LOGGER.error("Got exception while fetching the state: %s", ex)
