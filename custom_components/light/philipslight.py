@@ -31,6 +31,8 @@ REQUIREMENTS = ['python-mirobo']
 CCT_MIN = 1
 CCT_MAX = 100
 
+SUCCESS = ['ok']
+
 
 # pylint: disable=unused-argument
 def setup_platform(hass, config, add_devices_callback, discovery_info=None):
@@ -107,8 +109,7 @@ class PhilipsLight(Light):
         """Property accessor for light object."""
         if not self._light:
             from mirobo import Ceil
-            _LOGGER.info("Initializing light with host %s token %s",
-                         self.host, self.token)
+            _LOGGER.info("Initializing light with host %s", self.host)
             self._light = Ceil(self.host, self.token)
 
         return self._light
@@ -117,22 +118,35 @@ class PhilipsLight(Light):
         """Turn the light on."""
         if ATTR_BRIGHTNESS in kwargs:
             self._brightness = kwargs[ATTR_BRIGHTNESS]
-            self.light.set_bright(int(100 * self._brightness / 255))
+            percent_brightness = int(100 * self._brightness / 255)
+            if self.light.set_bright(percent_brightness) == SUCCESS:
+                _LOGGER.debug("Setting brightness of light (%s): %s %s%%",
+                              self.host, self.brightness, percent_brightness)
+            else:
+                _LOGGER.error("Setting brightness of light (%s) failed: %s %s%%",
+                              self.host, self.brightness, percent_brightness)
 
         if ATTR_COLOR_TEMP in kwargs:
             self._color_temp = kwargs[ATTR_COLOR_TEMP]
-            percent = self.translate(self._color_temp, self.max_mireds, self.min_mireds, CCT_MIN, CCT_MAX)
-            self.light.set_cct(percent)
-            _LOGGER.debug("Setting color temperature of light %s: %s mireds, %s%% cct",
-                          self.host, self._color_temp, percent)
+            percent_cct = self.translate(self._color_temp, self.max_mireds, self.min_mireds, CCT_MIN, CCT_MAX)
+            if self.light.set_cct(percent_cct) == SUCCESS:
+                _LOGGER.debug("Setting color temperature of light (%s): %s mireds, %s%% cct",
+                              self.host, self._color_temp, percent_cct)
+            else:
+                _LOGGER.error("Setting color temperature of light (%s) failed: %s mireds, %s%% cct",
+                              self.host, self._color_temp, percent_cct)
 
-        if self.light.on():
+        if self.light.on() == SUCCESS:
             self._state = True
+        else:
+            _LOGGER.error("Turning the light (%s) on failed.", self.host)
 
     def turn_off(self, **kwargs):
         """Turn the light off."""
-        if self.light.off():
+        if self.light.off() == SUCCESS:
             self._state = False
+        else:
+            _LOGGER.error("Turning the light (%s) off failed.", self.host)
 
     def update(self):
         """Fetch state from the device."""
@@ -146,7 +160,7 @@ class PhilipsLight(Light):
             self._color_temp = self.translate(state.cct, CCT_MIN, CCT_MAX, self.max_mireds, self.min_mireds)
 
         except DeviceException as ex:
-            _LOGGER.error("Got exception while fetching the state: %s", ex)
+            _LOGGER.error("Got exception from light (%s) while fetching the state: %s", ex, self.host)
 
     def translate(self, value, left_min, left_max, right_min, right_max):
         left_span = left_max - left_min
