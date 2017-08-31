@@ -28,7 +28,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
 })
 
-REQUIREMENTS = ['python-mirobo==0.1.3']
+REQUIREMENTS = ['python-mirobo>=0.1.3']
 
 # The light does not accept cct values < 1
 CCT_MIN = 1
@@ -177,8 +177,6 @@ class XiaomiPhilipsLight(Light):
         if result:
             self._state = True
 
-        self.hass.async_add_job(self.async_update_ha_state())
-
     @asyncio.coroutine
     def async_turn_off(self, **kwargs):
         """Turn the light off."""
@@ -187,8 +185,6 @@ class XiaomiPhilipsLight(Light):
 
         if result:
             self._state = True
-
-        self.hass.async_add_job(self.async_update_ha_state())
 
     @asyncio.coroutine
     def async_update(self):

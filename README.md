@@ -3,6 +3,8 @@ Xiaomi Philips Lights integration for Home Assistant
 
 Thanks to [Rytilahti](https://github.com/rytilahti/python-mirobo) for all the work.
 
+Please follow the instructions on [Retrieving the Access Token](https://home-assistant.io/components/xiaomi/#retrieving-the-access-token) to get the API token to use in the configuration.yaml file.
+
 # Setup
 
 ```
