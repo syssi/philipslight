@@ -55,6 +55,10 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     try:
         light = Ceil(host, token)
         device_info = light.info()
+        _LOGGER.info("%s %s %s initialized",
+                     device_info.raw['model'],
+                     device_info.raw['fw_ver'],
+                     device_info.raw['hw_ver'])
 
         philips_light = XiaomiPhilipsLight(name, light, device_info)
         hass.data[PLATFORM][host] = philips_light
