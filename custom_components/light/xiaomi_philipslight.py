@@ -42,7 +42,7 @@ ATTR_MODEL = 'model'
 @asyncio.coroutine
 def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     """Set up the light from config."""
-    from mirobo import Ceil, DeviceException
+    from mirobo import Device, DeviceException
     if PLATFORM not in hass.data:
         hass.data[PLATFORM] = {}
 
@@ -52,23 +52,43 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
 
     _LOGGER.info("Initializing with host %s (token %s...)", host, token[:5])
 
+    devices = []
     try:
-        light = Ceil(host, token)
+        light = Device(host, token)
         device_info = light.info()
         _LOGGER.info("%s %s %s initialized",
                      device_info.raw['model'],
                      device_info.raw['fw_ver'],
                      device_info.raw['hw_ver'])
 
-        philips_light = XiaomiPhilipsLight(name, light, device_info)
-        hass.data[PLATFORM][host] = philips_light
+        if device_info.raw['model'] == 'philips.light.sread1':
+            from mirobo import PhilipsEyecare
+            light = PhilipsEyecare(host, token)
+
+            device = XiaomiPhilipsEyecareLamp(name, light, device_info)
+            hass.data[PLATFORM][host] = device
+            devices.append(device)
+        elif device_info.raw['model'] == 'philips.light.ceil':
+            from mirobo import Ceil
+            light = Ceil(host, token)
+            device = XiaomiPhilipsCeilingLamp(name, light, device_info)
+            hass.data[PLATFORM][host] = device
+            devices.append(device)
+        else:
+            # philips.light.bulb
+            from mirobo import Ceil
+            light = Ceil(host, token)
+            device = XiaomiPhilipsGenericLight(name, light, device_info)
+            hass.data[PLATFORM][host] = device
+            devices.append(device)
+
     except DeviceException:
         raise PlatformNotReady
 
-    async_add_devices([philips_light], update_before_add=True)
+    async_add_devices(devices, update_before_add=True)
 
 
-class XiaomiPhilipsLight(Light):
+class XiaomiPhilipsGenericLight(Light):
     """Representation of a Xiaomi Philips Light."""
 
     def __init__(self, name, light, device_info):
@@ -225,3 +245,48 @@ class XiaomiPhilipsLight(Light):
         right_span = right_max - right_min
         value_scaled = float(value - left_min) / float(left_span)
         return int(right_min + (value_scaled * right_span))
+
+
+class XiaomiPhilipsCeilingLamp(XiaomiPhilipsGenericLight, Light):
+    """Representation of a Xiaomi Philips Ceiling Lamp."""
+
+    def __init__(self, name, light, device_info):
+        """Initialize the plug switch."""
+        XiaomiPhilipsGenericLight.__init__(self, name, light, device_info)
+
+    @property
+    def min_mireds(self):
+        """Return the coldest color_temp that this light supports."""
+
+        # FIXME: Calculate min/max color temp from specs
+        return 175
+
+    @property
+    def max_mireds(self):
+        """Return the warmest color_temp that this light supports."""
+
+        # FIXME: Calculate min/max color temp from specs
+        return 333
+
+
+class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight, Light):
+    """Representation of a Xiaomi Philips Eyecare Lamp 2."""
+
+    def __init__(self, name, light, device_info):
+        """Initialize the plug switch."""
+        XiaomiPhilipsGenericLight.__init__(self, name, light, device_info)
+
+    @property
+    def min_mireds(self):
+        """Return the coldest color_temp that this light supports."""
+
+        # FIXME: Calculate min/max color temp from specs
+        return 175
+
+    @property
+    def max_mireds(self):
+        """Return the warmest color_temp that this light supports."""
+
+        # FIXME: Calculate min/max color temp from specs
+        return 333
+
