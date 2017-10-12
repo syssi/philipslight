@@ -43,8 +43,6 @@ ATTR_MODEL = 'model'
 def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     """Set up the light from config."""
     from mirobo import Device, DeviceException
-    if PLATFORM not in hass.data:
-        hass.data[PLATFORM] = {}
 
     host = config.get(CONF_HOST)
     name = config.get(CONF_NAME)
@@ -66,20 +64,17 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
             light = PhilipsEyecare(host, token)
 
             device = XiaomiPhilipsEyecareLamp(name, light, device_info)
-            hass.data[PLATFORM][host] = device
             devices.append(device)
         elif device_info.raw['model'] == 'philips.light.ceil':
             from mirobo import Ceil
             light = Ceil(host, token)
             device = XiaomiPhilipsCeilingLamp(name, light, device_info)
-            hass.data[PLATFORM][host] = device
             devices.append(device)
         else:
             # philips.light.bulb
             from mirobo import Ceil
             light = Ceil(host, token)
             device = XiaomiPhilipsGenericLight(name, light, device_info)
-            hass.data[PLATFORM][host] = device
             devices.append(device)
 
     except DeviceException:
