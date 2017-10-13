@@ -42,7 +42,7 @@ ATTR_MODEL = 'model'
 @asyncio.coroutine
 def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     """Set up the light from config."""
-    from mirobo import Device, DeviceException
+    from miio import Device, DeviceException
 
     host = config.get(CONF_HOST)
     name = config.get(CONF_NAME)
@@ -60,18 +60,18 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
                      device_info.hardware_version)
 
         if device_info.model == 'philips.light.sread1':
-            from mirobo import PhilipsEyecare
+            from miio import PhilipsEyecare
             light = PhilipsEyecare(host, token)
 
             device = XiaomiPhilipsEyecareLamp(name, light, device_info)
             devices.append(device)
         elif device_info.model == 'philips.light.ceil':
-            from mirobo import Ceil
+            from miio import Ceil
             light = Ceil(host, token)
             device = XiaomiPhilipsCeilingLamp(name, light, device_info)
             devices.append(device)
         elif device_info.model == 'philips.light.bulb':
-            from mirobo import Ceil
+            from miio import Ceil
             light = Ceil(host, token)
             device = XiaomiPhilipsGenericLight(name, light, device_info)
             devices.append(device)
@@ -142,7 +142,7 @@ class XiaomiPhilipsGenericLight(Light):
     @asyncio.coroutine
     def _try_command(self, mask_error, func, *args, **kwargs):
         """Call a light command handling error messages."""
-        from mirobo import DeviceException
+        from miio import DeviceException
         try:
             result = yield from self.hass.async_add_job(
                 partial(func, *args, **kwargs))
@@ -190,7 +190,7 @@ class XiaomiPhilipsGenericLight(Light):
     @asyncio.coroutine
     def async_update(self):
         """Fetch state from the device."""
-        from mirobo import DeviceException
+        from miio import DeviceException
         try:
             state = yield from self.hass.async_add_job(self._light.status)
             _LOGGER.debug("Got new state: %s", state)
@@ -263,7 +263,7 @@ class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
     @asyncio.coroutine
     def async_update(self):
         """Fetch state from the device."""
-        from mirobo import DeviceException
+        from miio import DeviceException
         try:
             state = yield from self.hass.async_add_job(self._light.status)
             _LOGGER.debug("Got new state: %s", state)
