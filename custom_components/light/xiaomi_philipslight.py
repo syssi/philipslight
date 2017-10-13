@@ -55,22 +55,22 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
         light = Device(host, token)
         device_info = light.info()
         _LOGGER.info("%s %s %s initialized",
-                     device_info.raw['model'],
-                     device_info.raw['fw_ver'],
-                     device_info.raw['hw_ver'])
+                     device_info.model,
+                     device_info.firmware_version,
+                     device_info.hardware_version)
 
-        if device_info.raw['model'] == 'philips.light.sread1':
+        if device_info.model == 'philips.light.sread1':
             from mirobo import PhilipsEyecare
             light = PhilipsEyecare(host, token)
 
             device = XiaomiPhilipsEyecareLamp(name, light, device_info)
             devices.append(device)
-        elif device_info.raw['model'] == 'philips.light.ceil':
+        elif device_info.model == 'philips.light.ceil':
             from mirobo import Ceil
             light = Ceil(host, token)
             device = XiaomiPhilipsCeilingLamp(name, light, device_info)
             devices.append(device)
-        elif device_info.raw['model'] == 'philips.light.bulb':
+        elif device_info.model == 'philips.light.bulb':
             from mirobo import Ceil
             light = Ceil(host, token)
             device = XiaomiPhilipsGenericLight(name, light, device_info)
@@ -79,7 +79,7 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
             _LOGGER.error(
                 'Unsupported device found! Please create an issue at '
                 'https://github.com/rytilahti/python-miio/issues '
-                'and provide the following data: %s', device_info.raw['model'])
+                'and provide the following data: %s', device_info.model)
 
     except DeviceException:
         raise PlatformNotReady
@@ -101,7 +101,7 @@ class XiaomiPhilipsGenericLight(Light):
         self._light = light
         self._state = None
         self._state_attrs = {
-            ATTR_MODEL: self._device_info.raw['model'],
+            ATTR_MODEL: self._device_info.model,
         }
 
     @property
@@ -277,7 +277,6 @@ class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
 
         except DeviceException as ex:
             _LOGGER.error("Got exception while fetching the state: %s", ex)
-
 
 
 class XiaomiPhilipsCeilingLamp(XiaomiPhilipsLightBall, Light):
