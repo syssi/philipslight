@@ -62,7 +62,6 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
         if device_info.model == 'philips.light.sread1':
             from miio import PhilipsEyecare
             light = PhilipsEyecare(host, token)
-
             device = XiaomiPhilipsEyecareLamp(name, light, device_info)
             devices.append(device)
         elif device_info.model == 'philips.light.ceil':
@@ -73,7 +72,7 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
         elif device_info.model == 'philips.light.bulb':
             from miio import Ceil
             light = Ceil(host, token)
-            device = XiaomiPhilipsGenericLight(name, light, device_info)
+            device = XiaomiPhilipsLightBall(name, light, device_info)
             devices.append(device)
         else:
             _LOGGER.error(
@@ -214,8 +213,8 @@ class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
     """Representation of a Xiaomi Philips Light Ball."""
 
     def __init__(self, name, light, device_info):
-        """Initialize the plug switch."""
-        XiaomiPhilipsGenericLight.__init__(self, name, light, device_info)
+        """Initialize the light device."""
+        super().__init__(name, light, device_info)
 
     @property
     def color_temp(self):
@@ -258,7 +257,26 @@ class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
             if result:
                 self._color_temp = color_temp
 
-        XiaomiPhilipsGenericLight.async_turn_on(self, **kwargs)
+        if ATTR_BRIGHTNESS in kwargs:
+            brightness = kwargs[ATTR_BRIGHTNESS]
+            percent_brightness = int(100 * brightness / 255)
+
+            _LOGGER.debug(
+                "Setting brightness: %s %s%%",
+                self.brightness, percent_brightness)
+
+            result = yield from self._try_command(
+                "Setting brightness failed: %s",
+                self._light.set_brightness, percent_brightness)
+
+            if result:
+                self._brightness = brightness
+
+        result = yield from self._try_command(
+            "Turning the light on failed.", self._light.on)
+
+        if result:
+            self._state = True
 
     @asyncio.coroutine
     def async_update(self):
@@ -270,7 +288,7 @@ class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
 
             self._state = state.is_on
             self._brightness = int(255 * 0.01 * state.brightness)
-            self._color_temp = XiaomiPhilipsGenericLight.translate(
+            self._color_temp = self.translate(
                 state.color_temperature,
                 CCT_MIN, CCT_MAX,
                 self.max_mireds, self.min_mireds)
@@ -283,8 +301,8 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsLightBall, Light):
     """Representation of a Xiaomi Philips Ceiling Lamp."""
 
     def __init__(self, name, light, device_info):
-        """Initialize the plug switch."""
-        XiaomiPhilipsGenericLight.__init__(self, name, light, device_info)
+        """Initialize the light device."""
+        super().__init__(name, light, device_info)
 
     @property
     def min_mireds(self):
@@ -301,5 +319,5 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight, Light):
     """Representation of a Xiaomi Philips Eyecare Lamp 2."""
 
     def __init__(self, name, light, device_info):
-        """Initialize the plug switch."""
-        XiaomiPhilipsGenericLight.__init__(self, name, light, device_info)
+        """Initialize the light device."""
+        super().__init__(name, light, device_info)
