@@ -38,6 +38,7 @@ CCT_MAX = 100
 SUCCESS = ['ok']
 ATTR_MODEL = 'model'
 ATTR_SCENE = 'scene'
+ATTR_DELAY_OFF_COUNTDOWN = 'delay_off_countdown'
 
 SERVICE_SET_SCENE = 'xiaomi_miio_set_scene'
 
@@ -147,6 +148,8 @@ class XiaomiPhilipsGenericLight(Light):
         self._state = None
         self._state_attrs = {
             ATTR_MODEL: self._device_info.model,
+            ATTR_SCENE: None,
+            ATTR_DELAY_OFF_COUNTDOWN: None,
         }
 
     @property
@@ -236,6 +239,10 @@ class XiaomiPhilipsGenericLight(Light):
 
             self._state = state.is_on
             self._brightness = int(255 * 0.01 * state.brightness)
+            self._state_attrs.update({
+                ATTR_SCENE: state.scene,
+                ATTR_DELAY_OFF_COUNTDOWN: state.delay_off_countdown,
+            })
 
         except DeviceException as ex:
             _LOGGER.error("Got exception while fetching the state: %s", ex)
@@ -336,6 +343,10 @@ class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
                 state.color_temperature,
                 CCT_MIN, CCT_MAX,
                 self.max_mireds, self.min_mireds)
+            self._state_attrs.update({
+                ATTR_SCENE: state.scene,
+                ATTR_DELAY_OFF_COUNTDOWN: state.delay_off_countdown,
+            })
 
         except DeviceException as ex:
             _LOGGER.error("Got exception while fetching the state: %s", ex)
