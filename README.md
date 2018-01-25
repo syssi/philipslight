@@ -41,5 +41,5 @@ Set one of the 4 available fixed scenes.
 
 | Service data attribute    | Optional | Description                                           |
 |---------------------------|----------|-------------------------------------------------------|
-| `entity_id`               |      yes | Only act on specific light. Else targets all.         |
+| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 | `scene`                   |       no | Scene, between 1 and 4.                               |
