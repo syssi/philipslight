@@ -56,7 +56,7 @@ XIAOMI_MIIO_SERVICE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_ENTITY_ID): cv.entity_ids,
 })
 
-SERVICE_SCHEMA_SCENE = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
+SERVICE_SCHEMA_SET_SCENE = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
     vol.Required(ATTR_SCENE):
         vol.All(vol.Coerce(int), vol.Clamp(min=1, max=4))
 })
@@ -88,7 +88,7 @@ SERVICE_TO_METHOD = {
         'schema': SERVICE_SCHEMA_SET_DELAY_OFF},
     SERVICE_SET_SCENE: {
         'method': 'async_set_scene',
-        'schema': SERVICE_SCHEMA_SCENE},
+        'schema': SERVICE_SCHEMA_SET_SCENE},
 }
 
 
