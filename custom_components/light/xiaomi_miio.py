@@ -247,7 +247,7 @@ class XiaomiPhilipsGenericLight(Light):
 
             _LOGGER.debug(
                 "Setting brightness: %s %s%%",
-                self.brightness, percent_brightness)
+                brightness, percent_brightness)
 
             result = yield from self._try_command(
                 "Setting brightness failed: %s",
@@ -356,11 +356,11 @@ class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
 
         if ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs[ATTR_BRIGHTNESS]
-            percent_brightness = int(100 * brightness / 255)
+            percent_brightness = int(ceil(100 * brightness / 255.0))
 
             _LOGGER.debug(
                 "Setting brightness: %s %s%%",
-                self.brightness, percent_brightness)
+                brightness, percent_brightness)
 
             result = yield from self._try_command(
                 "Setting brightness failed: %s",
@@ -381,7 +381,7 @@ class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
             _LOGGER.debug("Got new state: %s", state)
 
             self._state = state.is_on
-            self._brightness = int(255 * 0.01 * state.brightness)
+            self._brightness = int(ceil((255/100.0) * state.brightness))
             self._color_temp = self.translate(
                 state.color_temperature,
                 CCT_MIN, CCT_MAX,
