@@ -29,7 +29,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
 })
 
-REQUIREMENTS = ['python-miio>=0.3.4']
+REQUIREMENTS = ['python-miio>=0.3.5']
 
 # The light does not accept cct values < 1
 CCT_MIN = 1
@@ -38,22 +38,57 @@ CCT_MAX = 100
 SUCCESS = ['ok']
 ATTR_MODEL = 'model'
 ATTR_SCENE = 'scene'
+ATTR_DELAY_OFF_COUNTDOWN = 'delay_off_countdown'
 
+SERVICE_AMBIENT_ON = 'xiaomi_miio_ambient_on'
+SERVICE_AMBIENT_OFF = 'xiaomi_miio_ambient_off'
+SERVICE_EYECARE_ON = 'xiaomi_miio_eyecare_on'
+SERVICE_EYECARE_OFF = 'xiaomi_miio_eyecare_off'
+SERVICE_REMINDER_ON = 'xiaomi_miio_reminder_on'
+SERVICE_REMINDER_OFF = 'xiaomi_miio_reminder_off'
+SERVICE_SMART_NIGHT_LIGHT_ON = 'xiaomi_miio_smart_night_light_on'
+SERVICE_SMART_NIGHT_LIGHT_OFF = 'xiaomi_miio_smart_night_light_off'
 SERVICE_SET_SCENE = 'xiaomi_miio_set_scene'
+SERVICE_SET_AMBIENT_BRIGHTNESS = 'xiaomi_miio_set_ambient_brightness'
+SERVICE_SET_DELAY_OFF = 'xiaomi_miio_set_delay_off'
 
 XIAOMI_MIIO_SERVICE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_ENTITY_ID): cv.entity_ids,
 })
 
-SERVICE_SCHEMA_SCENE = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
+SERVICE_SCHEMA_SET_SCENE = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
     vol.Required(ATTR_SCENE):
         vol.All(vol.Coerce(int), vol.Clamp(min=1, max=4))
 })
 
+SERVICE_SCHEMA_SET_AMBIENT_BRIGHTNESS = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
+    vol.Required(ATTR_BRIGHTNESS):
+        vol.All(vol.Coerce(int), vol.Clamp(min=0, max=100))
+})
+
+SERVICE_SCHEMA_SET_DELAY_OFF = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
+    vol.Required(ATTR_BRIGHTNESS):
+        vol.All(vol.Coerce(int), vol.Range(min=0))
+})
+
 SERVICE_TO_METHOD = {
+    SERVICE_AMBIENT_ON: {'method': 'async_ambient_on'},
+    SERVICE_AMBIENT_OFF: {'method': 'async_ambient_off'},
+    SERVICE_EYECARE_ON: {'method': 'async_eyecare_on'},
+    SERVICE_EYECARE_OFF: {'method': 'async_eyecare_off'},
+    SERVICE_REMINDER_ON: {'method': 'async_reminder_on'},
+    SERVICE_REMINDER_OFF: {'method': 'async_reminder_off'},
+    SERVICE_SMART_NIGHT_LIGHT_ON: {'method': 'async_smart_night_light_on'},
+    SERVICE_SMART_NIGHT_LIGHT_OFF: {'method': 'async_smart_night_light_off'},
+    SERVICE_SET_AMBIENT_BRIGHTNESS: {
+        'method': 'async_set_ambient_brightness',
+        'schema': SERVICE_SCHEMA_SET_AMBIENT_BRIGHTNESS},
+    SERVICE_SET_DELAY_OFF: {
+        'method': 'async_set_delay_off',
+        'schema': SERVICE_SCHEMA_SET_DELAY_OFF},
     SERVICE_SET_SCENE: {
         'method': 'async_set_scene',
-        'schema': SERVICE_SCHEMA_SCENE}
+        'schema': SERVICE_SCHEMA_SET_SCENE},
 }
 
 
@@ -125,6 +160,7 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
         if update_tasks:
             yield from asyncio.wait(update_tasks, loop=hass.loop)
 
+    # FIXME: Register only supported services per device
     for xiaomi_miio_service in SERVICE_TO_METHOD:
         schema = SERVICE_TO_METHOD[xiaomi_miio_service].get(
             'schema', XIAOMI_MIIO_SERVICE_SCHEMA)
@@ -147,6 +183,8 @@ class XiaomiPhilipsGenericLight(Light):
         self._state = None
         self._state_attrs = {
             ATTR_MODEL: self._device_info.model,
+            ATTR_SCENE: None,
+            ATTR_DELAY_OFF_COUNTDOWN: None,
         }
 
     @property
@@ -236,6 +274,10 @@ class XiaomiPhilipsGenericLight(Light):
 
             self._state = state.is_on
             self._brightness = int(255 * 0.01 * state.brightness)
+            self._state_attrs.update({
+                ATTR_SCENE: state.scene,
+                ATTR_DELAY_OFF_COUNTDOWN: state.delay_off_countdown,
+            })
 
         except DeviceException as ex:
             _LOGGER.error("Got exception while fetching the state: %s", ex)
@@ -246,6 +288,13 @@ class XiaomiPhilipsGenericLight(Light):
         yield from self._try_command(
             "Setting a fixed scene failed.",
             self._light.set_scene, scene)
+
+    @asyncio.coroutine
+    def async_set_delay_off(self, value: int):
+        """Set delay off. The unit is different per device"""
+        yield from self._try_command(
+            "Setting the delay off failed.",
+            self._light.delay_off, value)
 
     @staticmethod
     def translate(value, left_min, left_max, right_min, right_max):
@@ -336,6 +385,10 @@ class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
                 state.color_temperature,
                 CCT_MIN, CCT_MAX,
                 self.max_mireds, self.min_mireds)
+            self._state_attrs.update({
+                ATTR_SCENE: state.scene,
+                ATTR_DELAY_OFF_COUNTDOWN: state.delay_off_countdown,
+            })
 
         except DeviceException as ex:
             _LOGGER.error("Got exception while fetching the state: %s", ex)
@@ -365,3 +418,66 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight, Light):
     def __init__(self, name, light, device_info):
         """Initialize the light device."""
         super().__init__(name, light, device_info)
+
+    @asyncio.coroutine
+    def async_eyecare_on(self):
+        """Turn the eyecare light on."""
+        yield from self._try_command(
+            "Turning on the eyecare light failed.",
+            self._light.eyecare_on)
+
+    @asyncio.coroutine
+    def async_eyecare_off(self):
+        """Turn the eyecare light off."""
+        yield from self._try_command(
+            "Turning off the eyecare light failed.",
+            self._light.eyecare_off)
+
+    @asyncio.coroutine
+    def async_smart_night_light_on(self):
+        """Turn the smart night light mode on."""
+        yield from self._try_command(
+            "Turning on the smart night light mode failed.",
+            self._light.smart_night_light_on)
+
+    @asyncio.coroutine
+    def async_smart_night_light_off(self):
+        """Turn the smart night light mode off."""
+        yield from self._try_command(
+            "Turning off the smart night light mode failed.",
+            self._light.smart_night_light_off)
+
+    @asyncio.coroutine
+    def async_reminder_on(self):
+        """Enable the eye fatigue notification."""
+        yield from self._try_command(
+            "Turning on the reminder failed.",
+            self._light.reminder_on)
+
+    @asyncio.coroutine
+    def async_reminder_off(self):
+        """Disable the eye fatigue notification."""
+        yield from self._try_command(
+            "Turning off the reminder failed.",
+            self._light.reminder_off)
+
+    @asyncio.coroutine
+    def async_ambient_on(self):
+        """Turn the ambient light on."""
+        yield from self._try_command(
+            "Turning on the ambient light failed.",
+            self._light.ambient_on)
+
+    @asyncio.coroutine
+    def async_ambient_off(self):
+        """Turn the ambient light off."""
+        yield from self._try_command(
+            "Turning off the ambient light failed.",
+            self._light.ambient_off)
+
+    @asyncio.coroutine
+    def async_set_ambient_brightness(self, level: int):
+        """Set the brightness of the ambient light."""
+        yield from self._try_command(
+            "Setting the brightness of the ambient light failed.",
+            self._light.set_ambient_brightness, level)
