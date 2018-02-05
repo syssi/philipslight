@@ -7,6 +7,7 @@ https://home-assistant.io/components/light.xiaomi_miio/
 import asyncio
 from functools import partial
 import logging
+from math import ceil
 
 import voluptuous as vol
 
@@ -242,7 +243,7 @@ class XiaomiPhilipsGenericLight(Light):
         """Turn the light on."""
         if ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs[ATTR_BRIGHTNESS]
-            percent_brightness = int(100 * brightness / 255)
+            percent_brightness = int(ceil(100 * brightness / 255.0))
 
             _LOGGER.debug(
                 "Setting brightness: %s %s%%",
@@ -273,7 +274,7 @@ class XiaomiPhilipsGenericLight(Light):
             _LOGGER.debug("Got new state: %s", state)
 
             self._state = state.is_on
-            self._brightness = int(255 * 0.01 * state.brightness)
+            self._brightness = int(ceil((255/100.0) * state.brightness))
             self._state_attrs.update({
                 ATTR_SCENE: state.scene,
                 ATTR_DELAY_OFF_COUNTDOWN: state.delay_off_countdown,
