@@ -243,7 +243,7 @@ class XiaomiPhilipsGenericLight(Light):
         """Turn the light on."""
         if ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs[ATTR_BRIGHTNESS]
-            percent_brightness = int(ceil(100 * brightness / 255.0))
+            percent_brightness = ceil(100 * brightness / 255.0)
 
             _LOGGER.debug(
                 "Setting brightness: %s %s%%",
@@ -274,7 +274,7 @@ class XiaomiPhilipsGenericLight(Light):
             _LOGGER.debug("Got new state: %s", state)
 
             self._state = state.is_on
-            self._brightness = int(ceil((255/100.0) * state.brightness))
+            self._brightness = ceil((255/100.0) * state.brightness)
             self._state_attrs.update({
                 ATTR_SCENE: state.scene,
                 ATTR_DELAY_OFF_COUNTDOWN: state.delay_off_countdown,
@@ -356,7 +356,7 @@ class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
 
         if ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs[ATTR_BRIGHTNESS]
-            percent_brightness = int(ceil(100 * brightness / 255.0))
+            percent_brightness = ceil(100 * brightness / 255.0)
 
             _LOGGER.debug(
                 "Setting brightness: %s %s%%",
@@ -381,7 +381,7 @@ class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
             _LOGGER.debug("Got new state: %s", state)
 
             self._state = state.is_on
-            self._brightness = int(ceil((255/100.0) * state.brightness))
+            self._brightness = ceil((255/100.0) * state.brightness)
             self._color_temp = self.translate(
                 state.color_temperature,
                 CCT_MIN, CCT_MAX,
