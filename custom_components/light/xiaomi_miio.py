@@ -255,9 +255,9 @@ class XiaomiPhilipsGenericLight(Light):
 
             if result:
                 self._brightness = brightness
-
-        yield from self._try_command(
-            "Turning the light on failed.", self._light.on)
+        else:
+            yield from self._try_command(
+                "Turning the light on failed.", self._light.on)
 
     @asyncio.coroutine
     def async_turn_off(self, **kwargs):
