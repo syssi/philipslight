@@ -256,13 +256,13 @@ class XiaomiPhilipsGenericLight(Light):
             if result:
                 self._brightness = brightness
 
-        self._state = yield from self._try_command(
+        yield from self._try_command(
             "Turning the light on failed.", self._light.on)
 
     @asyncio.coroutine
     def async_turn_off(self, **kwargs):
         """Turn the light off."""
-        self._state = yield from self._try_command(
+        yield from self._try_command(
             "Turning the light off failed.", self._light.off)
 
     @asyncio.coroutine
@@ -369,7 +369,7 @@ class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
             if result:
                 self._brightness = brightness
 
-        self._state = yield from self._try_command(
+        yield from self._try_command(
             "Turning the light on failed.", self._light.on)
 
     @asyncio.coroutine
