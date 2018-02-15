@@ -74,7 +74,7 @@ SERVICE_SCHEMA_SET_AMBIENT_BRIGHTNESS = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
 })
 
 SERVICE_SCHEMA_SET_DELAY_OFF = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
-    vol.Required(ATTR_BRIGHTNESS):
+    vol.Required(ATTR_DELAY_OFF_COUNTDOWN):
         vol.All(vol.Coerce(int), vol.Range(min=0))
 })
 
