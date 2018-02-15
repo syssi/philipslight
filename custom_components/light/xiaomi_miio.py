@@ -300,11 +300,11 @@ class XiaomiPhilipsGenericLight(Light):
             self._light.set_scene, scene)
 
     @asyncio.coroutine
-    def async_set_delay_off(self, value: int):
+    def async_set_delay_off(self, delay_off_countdown: int):
         """Set delay off. The unit is different per device"""
         yield from self._try_command(
             "Setting the delay off failed.",
-            self._light.delay_off, value)
+            self._light.delay_off, delay_off_countdown)
 
     @staticmethod
     def translate(value, left_min, left_max, right_min, right_max):
@@ -498,8 +498,8 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight, Light):
             self._light.ambient_off)
 
     @asyncio.coroutine
-    def async_set_ambient_brightness(self, level: int):
+    def async_set_ambient_brightness(self, brightness: int):
         """Set the brightness of the ambient light."""
         yield from self._try_command(
             "Setting the brightness of the ambient light failed.",
-            self._light.set_ambient_brightness, level)
+            self._light.set_ambient_brightness, brightness)
