@@ -8,6 +8,8 @@ import asyncio
 from functools import partial
 import logging
 from math import ceil
+from datetime import timedelta
+import datetime
 
 import voluptuous as vol
 
@@ -18,6 +20,7 @@ from homeassistant.components.light import (
 
 from homeassistant.const import (CONF_NAME, CONF_HOST, CONF_TOKEN, )
 from homeassistant.exceptions import PlatformNotReady
+from homeassistant.util import dt
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,7 +36,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_MODEL, default=None): vol.In(
         ['philips.light.sread1',
          'philips.light.ceiling',
-         'philips.light.bulb']),
+         'philips.light.bulb', None]),
 })
 
 REQUIREMENTS = ['python-miio>=0.3.6']
@@ -42,11 +45,15 @@ REQUIREMENTS = ['python-miio>=0.3.6']
 CCT_MIN = 1
 CCT_MAX = 100
 
+DELAYED_TURN_OFF_MAX_DEVIATION = 4
+
 SUCCESS = ['ok']
 ATTR_MODEL = 'model'
 ATTR_SCENE = 'scene'
-ATTR_DELAY_OFF_COUNTDOWN = 'delay_off_countdown'
+ATTR_DELAYED_TURN_OFF = 'delayed_turn_off'
 
+SERVICE_SET_SCENE = 'xiaomi_miio_set_scene'
+SERVICE_SET_DELAYED_TURN_OFF = 'xiaomi_miio_set_delayed_turn_off'
 SERVICE_AMBIENT_ON = 'xiaomi_miio_ambient_on'
 SERVICE_AMBIENT_OFF = 'xiaomi_miio_ambient_off'
 SERVICE_EYECARE_ON = 'xiaomi_miio_eyecare_on'
@@ -55,9 +62,7 @@ SERVICE_REMINDER_ON = 'xiaomi_miio_reminder_on'
 SERVICE_REMINDER_OFF = 'xiaomi_miio_reminder_off'
 SERVICE_SMART_NIGHT_LIGHT_ON = 'xiaomi_miio_smart_night_light_on'
 SERVICE_SMART_NIGHT_LIGHT_OFF = 'xiaomi_miio_smart_night_light_off'
-SERVICE_SET_SCENE = 'xiaomi_miio_set_scene'
 SERVICE_SET_AMBIENT_BRIGHTNESS = 'xiaomi_miio_set_ambient_brightness'
-SERVICE_SET_DELAY_OFF = 'xiaomi_miio_set_delay_off'
 
 XIAOMI_MIIO_SERVICE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_ENTITY_ID): cv.entity_ids,
@@ -68,17 +73,23 @@ SERVICE_SCHEMA_SET_SCENE = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
         vol.All(vol.Coerce(int), vol.Clamp(min=1, max=4))
 })
 
+SERVICE_SCHEMA_SET_DELAYED_TURN_OFF = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
+    vol.Required(ATTR_DELAYED_TURN_OFF):
+        vol.All(vol.Coerce(int), vol.Range(min=0))
+})
+
 SERVICE_SCHEMA_SET_AMBIENT_BRIGHTNESS = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
     vol.Required(ATTR_BRIGHTNESS):
         vol.All(vol.Coerce(int), vol.Clamp(min=0, max=100))
 })
 
-SERVICE_SCHEMA_SET_DELAY_OFF = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
-    vol.Required(ATTR_DELAY_OFF_COUNTDOWN):
-        vol.All(vol.Coerce(int), vol.Range(min=0))
-})
-
 SERVICE_TO_METHOD = {
+    SERVICE_SET_DELAYED_TURN_OFF: {
+        'method': 'async_set_delayed_turn_off',
+        'schema': SERVICE_SCHEMA_SET_DELAYED_TURN_OFF},
+    SERVICE_SET_SCENE: {
+        'method': 'async_set_scene',
+        'schema': SERVICE_SCHEMA_SET_SCENE},
     SERVICE_AMBIENT_ON: {'method': 'async_ambient_on'},
     SERVICE_AMBIENT_OFF: {'method': 'async_ambient_off'},
     SERVICE_EYECARE_ON: {'method': 'async_eyecare_on'},
@@ -90,12 +101,6 @@ SERVICE_TO_METHOD = {
     SERVICE_SET_AMBIENT_BRIGHTNESS: {
         'method': 'async_set_ambient_brightness',
         'schema': SERVICE_SCHEMA_SET_AMBIENT_BRIGHTNESS},
-    SERVICE_SET_DELAY_OFF: {
-        'method': 'async_set_delay_off',
-        'schema': SERVICE_SCHEMA_SET_DELAY_OFF},
-    SERVICE_SET_SCENE: {
-        'method': 'async_set_scene',
-        'schema': SERVICE_SCHEMA_SET_SCENE},
 }
 
 
@@ -116,8 +121,8 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
 
     if model is None:
         try:
-            light = Device(host, token)
-            device_info = light.info()
+            miio_device = Device(host, token)
+            device_info = miio_device.info()
             model = device_info.model
             _LOGGER.info("%s %s %s detected",
                          model,
@@ -169,7 +174,6 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
         if update_tasks:
             yield from asyncio.wait(update_tasks, loop=hass.loop)
 
-    # FIXME: Register only supported services per device
     for xiaomi_miio_service in SERVICE_TO_METHOD:
         schema = SERVICE_TO_METHOD[xiaomi_miio_service].get(
             'schema', XIAOMI_MIIO_SERVICE_SCHEMA)
@@ -193,7 +197,7 @@ class XiaomiPhilipsGenericLight(Light):
         self._state_attrs = {
             ATTR_MODEL: self._model,
             ATTR_SCENE: None,
-            ATTR_DELAY_OFF_COUNTDOWN: None,
+            ATTR_DELAYED_TURN_OFF: None,
         }
 
     @property
@@ -283,9 +287,15 @@ class XiaomiPhilipsGenericLight(Light):
 
             self._state = state.is_on
             self._brightness = ceil((255 / 100.0) * state.brightness)
+
+            delayed_turn_off = self.delayed_turn_off_timestamp(
+                state.delay_off_countdown,
+                dt.utcnow(),
+                self._state_attrs[ATTR_DELAYED_TURN_OFF])
+
             self._state_attrs.update({
                 ATTR_SCENE: state.scene,
-                ATTR_DELAY_OFF_COUNTDOWN: state.delay_off_countdown,
+                ATTR_DELAYED_TURN_OFF: delayed_turn_off,
             })
 
         except DeviceException as ex:
@@ -300,11 +310,11 @@ class XiaomiPhilipsGenericLight(Light):
             self._light.set_scene, scene)
 
     @asyncio.coroutine
-    def async_set_delay_off(self, delay_off_countdown: int):
-        """Set delay off. The unit is different per device"""
+    def async_set_delayed_turn_off(self, delayed_turn_off: int):
+        """Set delay off. The unit is different per device."""
         yield from self._try_command(
             "Setting the delay off failed.",
-            self._light.delay_off, delay_off_countdown)
+            self._light.delay_off, delayed_turn_off)
 
     @staticmethod
     def translate(value, left_min, left_max, right_min, right_max):
@@ -313,6 +323,28 @@ class XiaomiPhilipsGenericLight(Light):
         right_span = right_max - right_min
         value_scaled = float(value - left_min) / float(left_span)
         return int(right_min + (value_scaled * right_span))
+
+    @staticmethod
+    def delayed_turn_off_timestamp(countdown: int,
+                                   current: datetime,
+                                   previous: datetime):
+        """Update the turn off timestamp only if necessary."""
+        if countdown > 0:
+            new = current.replace(microsecond=0) + \
+                                 timedelta(seconds=countdown)
+
+            if previous is None:
+                return new
+
+            lower = timedelta(seconds=-DELAYED_TURN_OFF_MAX_DEVIATION)
+            upper = timedelta(seconds=DELAYED_TURN_OFF_MAX_DEVIATION)
+            diff = previous - new
+            if lower < diff < upper:
+                return previous
+
+            return new
+
+        return None
 
 
 class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
@@ -414,9 +446,15 @@ class XiaomiPhilipsLightBall(XiaomiPhilipsGenericLight, Light):
                 state.color_temperature,
                 CCT_MIN, CCT_MAX,
                 self.max_mireds, self.min_mireds)
+
+            delayed_turn_off = self.delayed_turn_off_timestamp(
+                state.delay_off_countdown,
+                dt.utcnow(),
+                self._state_attrs[ATTR_DELAYED_TURN_OFF])
+
             self._state_attrs.update({
                 ATTR_SCENE: state.scene,
-                ATTR_DELAY_OFF_COUNTDOWN: state.delay_off_countdown,
+                ATTR_DELAYED_TURN_OFF: delayed_turn_off,
             })
 
         except DeviceException as ex:
@@ -503,3 +541,4 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight, Light):
         yield from self._try_command(
             "Setting the brightness of the ambient light failed.",
             self._light.set_ambient_brightness, brightness)
+
