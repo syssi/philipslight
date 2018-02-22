@@ -27,15 +27,28 @@ light:
     name: Xiaomi Philips Smart LED Ball
     host: 192.168.130.67
     token: da548d86f55996413d82eea94279d2ff
+    model: philips.light.bulb
   - platform: xiaomi_miio
     name: Xiaomi Philips Smart LED Ceiling Lamp
     host: 192.168.130.68
     token: 439e1a89ee5648d20482afa7839ef2ee
+    model: philips.light.ceiling
+  - platform: xiaomi_miio
+    name: Xiaomi Philips EyeCare Smart Lamp 2
+    host: 192.168.130.69
+    token: e8b19da37825a3056e84c522f05efce0
+    model: philips.light.sread1
 ```
+
+Configuration variables:
+- **host** (*Required*): The IP of your light.
+- **token** (*Required*): The API token of your light.
+- **name** (*Optional*): The name of your light.
+- **model** (*Optional*): The model of your light. Valid values are `philips.light.bulb`, `philips.light.sread1` and `philips.light.ceiling`. This setting can be used to bypass the device model detection and is recommended if your device isn't always available.
 
 ## Platform services
 
-#### Service fan/xiaomi_miio_set_scene
+#### Service light/xiaomi_miio_set_scene
 
 Set one of the 4 available fixed scenes.
 
@@ -43,3 +56,85 @@ Set one of the 4 available fixed scenes.
 |---------------------------|----------|-------------------------------------------------------|
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 | `scene`                   |       no | Scene, between 1 and 4.                               |
+
+### Service light/xiaomi_miio_set_delayed_turn_off
+
+Delayed turn off.
+
+| Service data attribute    | Optional | Description                                           |
+|---------------------------|----------|-------------------------------------------------------|
+| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
+| `seconds`                 |       no | Turn off delay in seconds.                            |
+
+### Service light/xiaomi_miio_ambient_on
+
+Turn the ambient light on.
+
+| Service data attribute    | Optional | Description                                           |
+|---------------------------|----------|-------------------------------------------------------|
+| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
+
+### Service light/xiaomi_miio_ambient_off
+
+Turn the ambient light off.
+
+| Service data attribute    | Optional | Description                                           |
+|---------------------------|----------|-------------------------------------------------------|
+| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
+
+### Service light/xiaomi_miio_set_ambient_brightness
+
+Set the brightness of the ambient light.
+
+| Service data attribute    | Optional | Description                                           |
+|---------------------------|----------|-------------------------------------------------------|
+| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
+| `brightness`              |       no | Brightness of the ambient light, between 1 and 100.   |
+
+### Service light/xiaomi_miio_smart_night_light_on
+
+Turn the smart night light mode on.
+
+| Service data attribute    | Optional | Description                                           |
+|---------------------------|----------|-------------------------------------------------------|
+| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
+
+### Service light/xiaomi_miio_smart_night_light_off
+
+Turn the smart night light mode off.
+
+| Service data attribute    | Optional | Description                                           |
+|---------------------------|----------|-------------------------------------------------------|
+| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
+
+### Service light/xiaomi_miio_eyecare_on
+
+Turn the eyecare light?/mode? on.
+
+| Service data attribute    | Optional | Description                                           |
+|---------------------------|----------|-------------------------------------------------------|
+| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
+
+### Service light/xiaomi_miio_eyecare_off
+
+Turn the eyecare light?/mode? off.
+
+| Service data attribute    | Optional | Description                                           |
+|---------------------------|----------|-------------------------------------------------------|
+| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
+
+### Service light/xiaomi_miio_reminder_on
+
+Enable the eye fatigue reminder/notification.
+
+| Service data attribute    | Optional | Description                                           |
+|---------------------------|----------|-------------------------------------------------------|
+| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
+
+### Service light/xiaomi_miio_reminder_off
+
+Disable the eye fatigue reminder/notification.
+
+| Service data attribute    | Optional | Description                                           |
+|---------------------------|----------|-------------------------------------------------------|
+| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
