@@ -66,7 +66,7 @@ Delayed turn off.
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 | `seconds`                 |       no | Turn off delay in seconds.                            |
 
-### Service light/xiaomi_miio_ambient_on
+### Service light/xiaomi_miio_ambient_on (Eyecare Smart Lamp 2 only)
 
 Turn the ambient light on.
 
@@ -74,7 +74,7 @@ Turn the ambient light on.
 |---------------------------|----------|-------------------------------------------------------|
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 
-### Service light/xiaomi_miio_ambient_off
+### Service light/xiaomi_miio_ambient_off (Eyecare Smart Lamp 2 only)
 
 Turn the ambient light off.
 
@@ -82,7 +82,7 @@ Turn the ambient light off.
 |---------------------------|----------|-------------------------------------------------------|
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 
-### Service light/xiaomi_miio_set_ambient_brightness
+### Service light/xiaomi_miio_set_ambient_brightness (Eyecare Smart Lamp 2 only)
 
 Set the brightness of the ambient light.
 
@@ -91,7 +91,7 @@ Set the brightness of the ambient light.
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 | `brightness`              |       no | Brightness of the ambient light, between 1 and 100.   |
 
-### Service light/xiaomi_miio_smart_night_light_on
+### Service light/xiaomi_miio_smart_night_light_on (Eyecare Smart Lamp 2 only)
 
 Turn the smart night light mode on.
 
@@ -99,7 +99,7 @@ Turn the smart night light mode on.
 |---------------------------|----------|-------------------------------------------------------|
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 
-### Service light/xiaomi_miio_smart_night_light_off
+### Service light/xiaomi_miio_smart_night_light_off (Eyecare Smart Lamp 2 only)
 
 Turn the smart night light mode off.
 
@@ -107,7 +107,7 @@ Turn the smart night light mode off.
 |---------------------------|----------|-------------------------------------------------------|
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 
-### Service light/xiaomi_miio_eyecare_on
+### Service light/xiaomi_miio_eyecare_on (Eyecare Smart Lamp 2 only)
 
 Turn the eyecare light?/mode? on.
 
@@ -115,7 +115,7 @@ Turn the eyecare light?/mode? on.
 |---------------------------|----------|-------------------------------------------------------|
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 
-### Service light/xiaomi_miio_eyecare_off
+### Service light/xiaomi_miio_eyecare_of (Eyecare Smart Lamp 2 only)f
 
 Turn the eyecare light?/mode? off.
 
@@ -123,7 +123,7 @@ Turn the eyecare light?/mode? off.
 |---------------------------|----------|-------------------------------------------------------|
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 
-### Service light/xiaomi_miio_reminder_on
+### Service light/xiaomi_miio_reminder_on (Eyecare Smart Lamp 2 only)
 
 Enable the eye fatigue reminder/notification.
 
@@ -131,7 +131,7 @@ Enable the eye fatigue reminder/notification.
 |---------------------------|----------|-------------------------------------------------------|
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 
-### Service light/xiaomi_miio_reminder_off
+### Service light/xiaomi_miio_reminder_off (Eyecare Smart Lamp 2 only)
 
 Disable the eye fatigue reminder/notification.
 
