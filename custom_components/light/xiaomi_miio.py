@@ -36,6 +36,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_MODEL, default=None): vol.In(
         ['philips.light.sread1',
          'philips.light.ceiling',
+         'philips.light.zyceiling',
          'philips.light.bulb', None]),
 })
 
@@ -162,7 +163,7 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
         from miio import PhilipsEyecare
         light = PhilipsEyecare(host, token)
         device = XiaomiPhilipsEyecareLamp(name, light, model)
-    elif model == 'philips.light.ceiling':
+    elif model in ['philips.light.ceiling', 'philips.light.zyceiling']:
         from miio import Ceil
         light = Ceil(host, token)
         device = XiaomiPhilipsCeilingLamp(name, light, model)
