@@ -61,10 +61,10 @@ Set one of the 4 available fixed scenes.
 
 Delayed turn off.
 
-| Service data attribute    | Optional | Description                                           |
-|---------------------------|----------|-------------------------------------------------------|
-| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
-| `seconds`                 |       no | Turn off delay in seconds.                            |
+| Service data attribute    | Optional | Description                                                                      |
+|---------------------------|----------|----------------------------------------------------------------------------------|
+| `entity_id`               |      yes | Only act on a specific light. Else targets all.                                  |
+| `time_period`             |       no | Time period for the delayed turn off. Valid values are 5, '0:05', {'minutes': 5} |
 
 #### Service light/xiaomi_miio_ambient_on (Eyecare Smart Lamp 2 only)
 

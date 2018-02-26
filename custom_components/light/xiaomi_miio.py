@@ -53,7 +53,7 @@ SUCCESS = ['ok']
 ATTR_MODEL = 'model'
 ATTR_SCENE = 'scene'
 ATTR_DELAYED_TURN_OFF = 'delayed_turn_off'
-ATTR_SECONDS = 'seconds'
+ATTR_TIME_PERIOD = 'time_period'
 ATTR_SMART_NIGHT_LIGHT = 'smart_night_light'
 ATTR_AUTOMATIC_COLOR_TEMPERATURE = 'automatic_color_temperature'
 ATTR_REMINDER = 'reminder'
@@ -103,8 +103,8 @@ SERVICE_SCHEMA_SET_SCENE = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
 })
 
 SERVICE_SCHEMA_SET_DELAYED_TURN_OFF = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
-    vol.Required(ATTR_SECONDS):
-        vol.All(vol.Coerce(int), vol.Range(min=0))
+    vol.Required(ATTR_TIME_PERIOD):
+        vol.All(cv.time_period, cv.positive_timedelta)
 })
 
 SERVICE_SCHEMA_SET_AMBIENT_BRIGHTNESS = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
@@ -342,14 +342,14 @@ class XiaomiPhilipsGenericLight(Light):
             self._light.set_scene, scene)
 
     @asyncio.coroutine
-    def async_set_delayed_turn_off(self, seconds: int):
-        """Set delay off. The unit is different per device."""
+    def async_set_delayed_turn_off(self, time_period: timedelta):
+        """Set delayed turn off."""
         if self.supported_features & SUPPORT_SET_DELAYED_TURN_OFF == 0:
             return
 
         yield from self._try_command(
             "Setting the delay off failed.",
-            self._light.delay_off, seconds)
+            self._light.delay_off, time_period.total_seconds())
 
     @staticmethod
     def translate(value, left_min, left_max, right_min, right_max):
