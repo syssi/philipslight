@@ -1,5 +1,4 @@
-# Xiaomi Philips Light
-Xiaomi Philips Lights integration for Home Assistant
+# Xiaomi Philips Lights
 
 The component allows you to control the state of your Xiaomi Philips LED Ball Lamp, Xiaomi Philips LED Ceiling Lamp and Xiaomi Philips Eyecare Smart Lamp 2.
 
