@@ -53,14 +53,14 @@ ATTR_MODEL = 'model'
 ATTR_SCENE = 'scene'
 ATTR_DELAYED_TURN_OFF = 'delayed_turn_off'
 ATTR_TIME_PERIOD = 'time_period'
-ATTR_SMART_NIGHT_LIGHT = 'smart_night_light'
+ATTR_SMART_NIGHT_LIGHT_MODE = 'smart_night_light_mode'
 ATTR_AUTOMATIC_COLOR_TEMPERATURE = 'automatic_color_temperature'
 ATTR_REMINDER = 'reminder'
 
 SUPPORT_SET_SCENE = 4
 SUPPORT_SET_DELAYED_TURN_OFF = 8
 SUPPORT_REMINDER = 16
-SUPPORT_SMART_NIGHT_LIGHT = 32
+SUPPORT_SMART_NIGHT_LIGHT_MODE = 32
 
 SUPPORT_FLAGS_GENERIC = (SUPPORT_BRIGHTNESS | SUPPORT_SET_SCENE |
                          SUPPORT_SET_DELAYED_TURN_OFF)
@@ -71,7 +71,7 @@ SUPPORT_FLAGS_CEILING = (SUPPORT_FLAGS_GENERIC | SUPPORT_COLOR_TEMP)
 
 SUPPORT_FLAGS_SREAD1_EYECARE_LIGHT = (SUPPORT_FLAGS_GENERIC |
                                       SUPPORT_REMINDER |
-                                      SUPPORT_SMART_NIGHT_LIGHT)
+                                      SUPPORT_SMART_NIGHT_LIGHT_MODE)
 
 SUPPORT_FLAGS_SREAD1_AMBIENT_LIGHT = (SUPPORT_BRIGHTNESS)
 
@@ -79,8 +79,8 @@ SERVICE_SET_SCENE = 'xiaomi_miio_set_scene'
 SERVICE_SET_DELAYED_TURN_OFF = 'xiaomi_miio_set_delayed_turn_off'
 SERVICE_REMINDER_ON = 'xiaomi_miio_reminder_on'
 SERVICE_REMINDER_OFF = 'xiaomi_miio_reminder_off'
-SERVICE_SMART_NIGHT_LIGHT_ON = 'xiaomi_miio_smart_night_light_on'
-SERVICE_SMART_NIGHT_LIGHT_OFF = 'xiaomi_miio_smart_night_light_off'
+SERVICE_SMART_NIGHT_LIGHT_MODE_ON = 'xiaomi_miio_smart_night_light_mode_on'
+SERVICE_SMART_NIGHT_LIGHT_MODE_OFF = 'xiaomi_miio_smart_night_light_mode_off'
 
 XIAOMI_MIIO_SERVICE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_ENTITY_ID): cv.entity_ids,
@@ -105,8 +105,10 @@ SERVICE_TO_METHOD = {
         'schema': SERVICE_SCHEMA_SET_SCENE},
     SERVICE_REMINDER_ON: {'method': 'async_reminder_on'},
     SERVICE_REMINDER_OFF: {'method': 'async_reminder_off'},
-    SERVICE_SMART_NIGHT_LIGHT_ON: {'method': 'async_smart_night_light_on'},
-    SERVICE_SMART_NIGHT_LIGHT_OFF: {'method': 'async_smart_night_light_off'},
+    SERVICE_SMART_NIGHT_LIGHT_MODE_ON:
+        {'method': 'async_smart_night_light_mode_on'},
+    SERVICE_SMART_NIGHT_LIGHT_MODE_OFF:
+        {'method': 'async_smart_night_light_mode_off'},
 }
 
 
@@ -372,12 +374,12 @@ class XiaomiPhilipsGenericLight(Light):
         return None
 
     @asyncio.coroutine
-    def async_smart_night_light_on(self):
+    def async_smart_night_light_mode_on(self):
         """Turn the smart night light mode on."""
         return
 
     @asyncio.coroutine
-    def async_smart_night_light_off(self):
+    def async_smart_night_light_mode_off(self):
         """Turn the smart night light mode off."""
         return
 
@@ -515,7 +517,7 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsBulb, Light):
         XiaomiPhilipsBulb.__init__(self, name, light, model)
 
         self._state_attrs.update({
-            ATTR_SMART_NIGHT_LIGHT: None,
+            ATTR_SMART_NIGHT_LIGHT_MODE: None,
             ATTR_AUTOMATIC_COLOR_TEMPERATURE: None,
         })
 
@@ -557,7 +559,7 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsBulb, Light):
             self._state_attrs.update({
                 ATTR_SCENE: state.scene,
                 ATTR_DELAYED_TURN_OFF: delayed_turn_off,
-                ATTR_SMART_NIGHT_LIGHT: state.smart_night_light,
+                ATTR_SMART_NIGHT_LIGHT_MODE: state.smart_night_light,
                 ATTR_AUTOMATIC_COLOR_TEMPERATURE:
                     state.automatic_color_temperature,
             })
@@ -576,7 +578,7 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight, Light):
 
         self._state_attrs.update({
             ATTR_REMINDER: None,
-            ATTR_SMART_NIGHT_LIGHT: None,
+            ATTR_SMART_NIGHT_LIGHT_MODE: None,
         })
 
     @property
@@ -631,7 +633,7 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight, Light):
                 ATTR_SCENE: state.scene,
                 ATTR_DELAYED_TURN_OFF: delayed_turn_off,
                 ATTR_REMINDER: state.reminder,
-                ATTR_SMART_NIGHT_LIGHT: state.smart_night_light
+                ATTR_SMART_NIGHT_LIGHT_MODE: state.smart_night_light
             })
 
         except DeviceException as ex:
@@ -639,9 +641,9 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight, Light):
             _LOGGER.error("Got exception while fetching the state: %s", ex)
 
     @asyncio.coroutine
-    def async_smart_night_light_on(self):
+    def async_smart_night_light_mode_on(self):
         """Turn the smart night light mode on."""
-        if self.supported_features & SUPPORT_SMART_NIGHT_LIGHT == 0:
+        if self.supported_features & SUPPORT_SMART_NIGHT_LIGHT_MODE == 0:
             return
 
         yield from self._try_command(
@@ -649,9 +651,9 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight, Light):
             self._light.smart_night_light_on)
 
     @asyncio.coroutine
-    def async_smart_night_light_off(self):
+    def async_smart_night_light_mode_off(self):
         """Turn the smart night light mode off."""
-        if self.supported_features & SUPPORT_SMART_NIGHT_LIGHT == 0:
+        if self.supported_features & SUPPORT_SMART_NIGHT_LIGHT_MODE == 0:
             return
 
         yield from self._try_command(
