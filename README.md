@@ -48,7 +48,7 @@ Configuration variables:
 
 ## Platform services
 
-#### Service light/xiaomi_miio_set_scene
+#### Service `light.xiaomi_miio_set_scene`
 
 Set one of the 4 available fixed scenes.
 
@@ -57,7 +57,7 @@ Set one of the 4 available fixed scenes.
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 | `scene`                   |       no | Scene, between 1 and 4.                               |
 
-#### Service light/xiaomi_miio_set_delayed_turn_off
+#### Service `light.xiaomi_miio_set_delayed_turn_off`
 
 Delayed turn off.
 
@@ -66,32 +66,7 @@ Delayed turn off.
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.                                  |
 | `time_period`             |       no | Time period for the delayed turn off. Valid values are 5, '0:05', {'minutes': 5} |
 
-#### Service light/xiaomi_miio_ambient_on (Eyecare Smart Lamp 2 only)
-
-Turn the ambient light on.
-
-| Service data attribute    | Optional | Description                                           |
-|---------------------------|----------|-------------------------------------------------------|
-| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
-
-#### Service light/xiaomi_miio_ambient_off (Eyecare Smart Lamp 2 only)
-
-Turn the ambient light off.
-
-| Service data attribute    | Optional | Description                                           |
-|---------------------------|----------|-------------------------------------------------------|
-| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
-
-#### Service light/xiaomi_miio_set_ambient_brightness (Eyecare Smart Lamp 2 only)
-
-Set the brightness of the ambient light.
-
-| Service data attribute    | Optional | Description                                           |
-|---------------------------|----------|-------------------------------------------------------|
-| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
-| `brightness`              |       no | Brightness of the ambient light, between 1 and 100.   |
-
-#### Service light/xiaomi_miio_smart_night_light_on (Eyecare Smart Lamp 2 only)
+#### Service `light.xiaomi_miio_smart_night_light_mode_on` (Eyecare Smart Lamp 2 only)
 
 Turn the smart night light mode on.
 
@@ -99,7 +74,7 @@ Turn the smart night light mode on.
 |---------------------------|----------|-------------------------------------------------------|
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 
-#### Service light/xiaomi_miio_smart_night_light_off (Eyecare Smart Lamp 2 only)
+#### Service `light.xiaomi_miio_smart_night_light_mode_off` (Eyecare Smart Lamp 2 only)
 
 Turn the smart night light mode off.
 
@@ -107,23 +82,7 @@ Turn the smart night light mode off.
 |---------------------------|----------|-------------------------------------------------------|
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 
-#### Service light/xiaomi_miio_eyecare_on (Eyecare Smart Lamp 2 only)
-
-Turn the eyecare light?/mode? on.
-
-| Service data attribute    | Optional | Description                                           |
-|---------------------------|----------|-------------------------------------------------------|
-| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
-
-#### Service light/xiaomi_miio_eyecare_of (Eyecare Smart Lamp 2 only)f
-
-Turn the eyecare light?/mode? off.
-
-| Service data attribute    | Optional | Description                                           |
-|---------------------------|----------|-------------------------------------------------------|
-| `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
-
-#### Service light/xiaomi_miio_reminder_on (Eyecare Smart Lamp 2 only)
+#### Service `light.xiaomi_miio_reminder_on` (Eyecare Smart Lamp 2 only)
 
 Enable the eye fatigue reminder/notification.
 
@@ -131,7 +90,7 @@ Enable the eye fatigue reminder/notification.
 |---------------------------|----------|-------------------------------------------------------|
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 
-#### Service light/xiaomi_miio_reminder_off (Eyecare Smart Lamp 2 only)
+#### Service `light.xiaomi_miio_reminder_off` (Eyecare Smart Lamp 2 only)
 
 Disable the eye fatigue reminder/notification.
 
