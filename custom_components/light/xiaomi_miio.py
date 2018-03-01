@@ -46,7 +46,8 @@ REQUIREMENTS = ['python-miio>=0.3.6']
 CCT_MIN = 1
 CCT_MAX = 100
 
-DELAYED_TURN_OFF_MAX_DEVIATION = 4
+DELAYED_TURN_OFF_MAX_DEVIATION_SECONDS = 4
+DELAYED_TURN_OFF_MAX_DEVIATION_MINUTES = 1
 
 SUCCESS = ['ok']
 ATTR_MODEL = 'model'
@@ -340,7 +341,7 @@ class XiaomiPhilipsGenericLight(Light):
             return
 
         yield from self._try_command(
-            "Setting the delay off failed.",
+            "Setting the turn off delay failed.",
             self._light.delay_off, time_period.total_seconds())
 
     @staticmethod
@@ -363,8 +364,8 @@ class XiaomiPhilipsGenericLight(Light):
             if previous is None:
                 return new
 
-            lower = timedelta(seconds=-DELAYED_TURN_OFF_MAX_DEVIATION)
-            upper = timedelta(seconds=DELAYED_TURN_OFF_MAX_DEVIATION)
+            lower = timedelta(seconds=-DELAYED_TURN_OFF_MAX_DEVIATION_SECONDS)
+            upper = timedelta(seconds=DELAYED_TURN_OFF_MAX_DEVIATION_SECONDS)
             diff = previous - new
             if lower < diff < upper:
                 return previous
@@ -641,6 +642,17 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight, Light):
             _LOGGER.error("Got exception while fetching the state: %s", ex)
 
     @asyncio.coroutine
+    def async_set_delayed_turn_off(self, time_period: timedelta):
+        """Set delayed turn off."""
+        if self.supported_features & SUPPORT_SET_DELAYED_TURN_OFF == 0:
+            return
+
+        yield from self._try_command(
+            "Setting the turn off delay failed.",
+            self._light.delay_off, round(time_period.total_seconds()/60))
+
+
+    @asyncio.coroutine
     def async_smart_night_light_mode_on(self):
         """Turn the smart night light mode on."""
         if self.supported_features & SUPPORT_SMART_NIGHT_LIGHT_MODE == 0:
@@ -679,6 +691,28 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight, Light):
         yield from self._try_command(
             "Turning off the reminder failed.",
             self._light.reminder_off)
+
+    @staticmethod
+    def delayed_turn_off_timestamp(countdown: int,
+                                   current: datetime,
+                                   previous: datetime):
+        """Update the turn off timestamp only if necessary."""
+        if countdown > 0:
+            new = current.replace(second=0, microsecond=0) + \
+                  timedelta(minutes=countdown)
+
+            if previous is None:
+                return new
+
+            lower = timedelta(minutes=-DELAYED_TURN_OFF_MAX_DEVIATION_MINUTES)
+            upper = timedelta(minutes=DELAYED_TURN_OFF_MAX_DEVIATION_MINUTES)
+            diff = previous - new
+            if lower < diff < upper:
+                return previous
+
+            return new
+
+        return None
 
 
 class XiaomiPhilipsEyecareLampAmbientLight(Light):
