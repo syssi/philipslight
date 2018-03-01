@@ -1,21 +1,57 @@
 # Xiaomi Philips Light
 Xiaomi Philips Lights integration for Home Assistant
 
-The component allows you to control the state of your Xiaomi Philips LED Ball Lamp, Xiaomi Philips LED Ceiling Lamp and Xiaomi Philips Eyecare Smart Lamp 2
+The component allows you to control the state of your Xiaomi Philips LED Ball Lamp, Xiaomi Philips LED Ceiling Lamp and Xiaomi Philips Eyecare Smart Lamp 2.
 
 Thanks to [Rytilahti](https://github.com/rytilahti/python-mirobo) for all the work.
 
 Please follow the instructions on [Retrieving the Access Token](https://home-assistant.io/components/xiaomi/#retrieving-the-access-token) to get the API token to use in the configuration.yaml file.
 
 ## Features
-* On, Off
+
+### Philips LED Ball Lamp
+
+* Power (on, off)
 * Brightness
-* Color temperature
+* Color temperature (175...333 mireds)
+* Scene (1, 2, 3, 4)
+* Delayed turn off (Resolution in seconds)
 * Attributes
   - power
   - model
   - brightness
   - color_temperature
+
+### Philips LED Ceiling Lamp
+
+* Power (on, off)
+* Brightness
+* Color temperature (175...370 mireds)
+* Scene (1, 2, 3, 4)
+* Smart night light mode (on, off)
+* Delayed turn off (Resolution in seconds)
+* Attributes
+  - power
+  - model
+  - brightness
+  - color_temperature
+  - automatic_color_temperature
+  - smart_night_light_mode
+
+### Philips Eyecare Smart Lamp 2
+
+* Eyecare light (on, off)
+* Ambient light (on, off)
+* Brightness (of each light)
+* Scene (1, 2, 3, 4)
+* Smart night light mode (on, off)
+* Delayed turn off (Resolution in seconds)
+* Eye fatigue reminder / notification (on, off)
+* Attributes
+  - power
+  - model
+  - brightness
+  - smart_night_light_mode
 
 ## Setup
 
