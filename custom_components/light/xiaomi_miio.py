@@ -684,7 +684,7 @@ class XiaomiPhilipsEyecareLampAmbientLight(Light):
 
     def __init__(self, name, light, model):
         """Initialize the light device."""
-        self._name = name
+        self._name = name + ' Ambient Light'
         self._light = light
         self._model = model
 
