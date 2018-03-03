@@ -168,10 +168,9 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     else:
         _LOGGER.error(
             'Unsupported device found! Please create an issue at '
-            'https://github.com/rytilahti/python-miio/issues '
+            'https://github.com/syssi/philipslight/issues '
             'and provide the following data: %s', model)
         return False
-
 
     async_add_devices(devices, update_before_add=True)
 
@@ -374,21 +373,25 @@ class XiaomiPhilipsGenericLight(Light):
 
         return None
 
+    # pylint: disable=no-self-use
     @asyncio.coroutine
     def async_smart_night_light_mode_on(self):
         """Turn the smart night light mode on."""
         return
 
+    # pylint: disable=no-self-use
     @asyncio.coroutine
     def async_smart_night_light_mode_off(self):
         """Turn the smart night light mode off."""
         return
 
+    # pylint: disable=no-self-use
     @asyncio.coroutine
     def async_reminder_on(self):
         """Enable the eye fatigue notification."""
         return
 
+    # pylint: disable=no-self-use
     @asyncio.coroutine
     def async_reminder_off(self):
         """Disable the eye fatigue notification."""
@@ -651,7 +654,6 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight, Light):
             "Setting the turn off delay failed.",
             self._light.delay_off, round(time_period.total_seconds()/60))
 
-
     @asyncio.coroutine
     def async_smart_night_light_mode_on(self):
         """Turn the smart night light mode on."""
@@ -765,6 +767,21 @@ class XiaomiPhilipsEyecareLampAmbientLight(Light):
     def supported_features(self):
         """Return the supported features."""
         return SUPPORT_FLAGS_SREAD1_AMBIENT_LIGHT
+
+    @asyncio.coroutine
+    def _try_command(self, mask_error, func, *args, **kwargs):
+        """Call a light command handling error messages."""
+        from miio import DeviceException
+        try:
+            result = yield from self.hass.async_add_job(
+                partial(func, *args, **kwargs))
+
+            _LOGGER.debug("Response received from light: %s", result)
+
+            return result == SUCCESS
+        except DeviceException as exc:
+            _LOGGER.error(mask_error, exc)
+            return False
 
     @asyncio.coroutine
     def async_turn_on(self, **kwargs):
