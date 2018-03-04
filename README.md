@@ -16,10 +16,9 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 * Scene (1, 2, 3, 4)
 * Delayed turn off (Resolution in seconds)
 * Attributes
-  - power
   - model
-  - brightness
-  - color_temperature
+  - scene
+  - delayed_turn_off
 
 ### Philips LED Ceiling Lamp
 
@@ -30,12 +29,11 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 * Night light mode (on, off)
 * Delayed turn off (Resolution in seconds)
 * Attributes
-  - power
   - model
-  - brightness
-  - color_temperature
-  - automatic_color_temperature
+  - scene
+  - delayed_turn_off
   - night_light_mode
+  - automatic_color_temperature
 
 ### Philips Eyecare Smart Lamp 2
 
@@ -48,10 +46,11 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 * Eye fatigue reminder / notification (on, off)
 * Eyecare mode (on, off)
 * Attributes
-  - power
   - model
-  - brightness
+  - scene
+  - delayed_turn_off
   - night_light_mode
+  - reminder
   - eyecare_mode
 
 ## Setup
