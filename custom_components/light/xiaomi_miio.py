@@ -40,7 +40,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
          'philips.light.bulb']),
 })
 
-REQUIREMENTS = ['python-miio>=0.3.6']
+REQUIREMENTS = ['python-miio==0.3.7']
 
 # The light does not accept cct values < 1
 CCT_MIN = 1
@@ -312,6 +312,33 @@ class XiaomiPhilipsGenericLight(XiaomiPhilipsAbstractLight):
     def supported_features(self):
         """Return the supported features."""
         return SUPPORT_FLAGS_GENERIC
+
+    @asyncio.coroutine
+    def async_turn_on(self, **kwargs):
+        """Turn the light on."""
+        if ATTR_BRIGHTNESS in kwargs:
+            brightness = kwargs[ATTR_BRIGHTNESS]
+            percent_brightness = ceil(100 * brightness / 255.0)
+
+            _LOGGER.debug(
+                "Setting brightness: %s %s%%",
+                brightness, percent_brightness)
+
+            result = yield from self._try_command(
+                "Setting brightness failed: %s",
+                self._light.set_brightness, percent_brightness)
+
+            if result:
+                self._brightness = brightness
+        else:
+            yield from self._try_command(
+                "Turning the light on failed.", self._light.on)
+
+    @asyncio.coroutine
+    def async_turn_off(self, **kwargs):
+        """Turn the light off."""
+        yield from self._try_command(
+            "Turning the light off failed.", self._light.off)
 
     @asyncio.coroutine
     def async_update(self):
@@ -604,33 +631,6 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight):
     def supported_features(self):
         """Return the supported features."""
         return SUPPORT_FLAGS_SREAD1_EYECARE_LIGHT
-
-    @asyncio.coroutine
-    def async_turn_on(self, **kwargs):
-        """Turn the light on."""
-        if ATTR_BRIGHTNESS in kwargs:
-            brightness = kwargs[ATTR_BRIGHTNESS]
-            percent_brightness = ceil(100 * brightness / 255.0)
-
-            _LOGGER.debug(
-                "Setting brightness: %s %s%%",
-                brightness, percent_brightness)
-
-            result = yield from self._try_command(
-                "Setting brightness failed: %s",
-                self._light.set_brightness, percent_brightness)
-
-            if result:
-                self._brightness = brightness
-        else:
-            yield from self._try_command(
-                "Turning the light on failed.", self._light.on)
-
-    @asyncio.coroutine
-    def async_turn_off(self, **kwargs):
-        """Turn the light off."""
-        yield from self._try_command(
-            "Turning the light off failed.", self._light.off)
 
     @asyncio.coroutine
     def async_update(self):
