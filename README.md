@@ -27,7 +27,7 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 * Brightness
 * Color temperature (175...370 mireds)
 * Scene (1, 2, 3, 4)
-* Smart night light mode (on, off)
+* Night light mode (on, off)
 * Delayed turn off (Resolution in seconds)
 * Attributes
   - power
@@ -35,7 +35,7 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
   - brightness
   - color_temperature
   - automatic_color_temperature
-  - smart_night_light_mode
+  - night_light_mode
 
 ### Philips Eyecare Smart Lamp 2
 
@@ -43,14 +43,14 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 * Ambient light (on, off)
 * Brightness (of each light)
 * Scene (1, 2, 3, 4)
-* Smart night light mode (on, off)
+* Night light mode (on, off)
 * Delayed turn off (Resolution in seconds)
 * Eye fatigue reminder / notification (on, off)
 * Attributes
   - power
   - model
   - brightness
-  - smart_night_light_mode
+  - night_light_mode
 
 ## Setup
 
@@ -101,7 +101,7 @@ Delayed turn off.
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.                                  |
 | `time_period`             |       no | Time period for the delayed turn off. Valid values are 5, '0:05', {'minutes': 5} |
 
-#### Service `light.xiaomi_miio_smart_night_light_mode_on` (Eyecare Smart Lamp 2 only)
+#### Service `light.xiaomi_miio_night_light_mode_on` (Eyecare Smart Lamp 2 only)
 
 Turn the smart night light mode on.
 
@@ -109,7 +109,7 @@ Turn the smart night light mode on.
 |---------------------------|----------|-------------------------------------------------------|
 | `entity_id`               |      yes | Only act on a specific light. Else targets all.       |
 
-#### Service `light.xiaomi_miio_smart_night_light_mode_off` (Eyecare Smart Lamp 2 only)
+#### Service `light.xiaomi_miio_night_light_mode_off` (Eyecare Smart Lamp 2 only)
 
 Turn the smart night light mode off.
 
