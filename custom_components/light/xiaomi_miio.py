@@ -396,7 +396,7 @@ class XiaomiPhilipsGenericLight(XiaomiPhilipsAbstractLight):
                                    current: datetime,
                                    previous: datetime):
         """Update the turn off timestamp only if necessary."""
-        if countdown > 0:
+        if countdown is not None and countdown > 0:
             new = current.replace(microsecond=0) + \
                   timedelta(seconds=countdown)
 
@@ -754,7 +754,7 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight):
                                    current: datetime,
                                    previous: datetime):
         """Update the turn off timestamp only if necessary."""
-        if countdown > 0:
+        if countdown is not None and countdown > 0:
             new = current.replace(second=0, microsecond=0) + \
                   timedelta(minutes=countdown)
 
