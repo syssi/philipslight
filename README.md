@@ -46,11 +46,13 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 * Night light mode (on, off)
 * Delayed turn off (Resolution in seconds)
 * Eye fatigue reminder / notification (on, off)
+* Eyecare mode (on, off)
 * Attributes
   - power
   - model
   - brightness
   - night_light_mode
+  - eyecare_mode
 
 ## Setup
 
