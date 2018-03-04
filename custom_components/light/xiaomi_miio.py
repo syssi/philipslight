@@ -154,7 +154,8 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
         devices.append(device)
         hass.data[DATA_KEY][host] = device
 
-        device = XiaomiPhilipsEyecareLampAmbientLight(name, light, model)
+        device = XiaomiPhilipsEyecareLampAmbientLight(
+            name + ' Ambient Light', light, model)
         devices.append(device)
         # The ambient light doesn't expose additional services.
         # A hass.data[DATA_KEY] entry isn't needed.
@@ -686,7 +687,7 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight):
 
         yield from self._try_command(
             "Setting the turn off delay failed.",
-            self._light.delay_off, round(time_period.total_seconds()/60))
+            self._light.delay_off, round(time_period.total_seconds() / 60))
 
     @asyncio.coroutine
     def async_reminder_on(self):
@@ -773,11 +774,6 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight):
 
 class XiaomiPhilipsEyecareLampAmbientLight(XiaomiPhilipsAbstractLight):
     """Representation of a Xiaomi Philips Eyecare Lamp Ambient Light."""
-
-    def __init__(self, name, light, model):
-        """Initialize the light device."""
-        self._name = name + ' Ambient Light'
-        XiaomiPhilipsAbstractLight.__init__(self, name, light, model)
 
     @property
     def supported_features(self):
