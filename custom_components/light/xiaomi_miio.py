@@ -119,7 +119,8 @@ SERVICE_TO_METHOD = {
 
 
 # pylint: disable=unused-argument
-async def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_devices,
+                               discovery_info=None):
     """Set up the light from config."""
     from miio import Device, DeviceException
     if DATA_KEY not in hass.data:
@@ -149,13 +150,13 @@ async def async_setup_platform(hass, config, async_add_devices, discovery_info=N
     if model == 'philips.light.sread1':
         from miio import PhilipsEyecare
         light = PhilipsEyecare(host, token)
-        device = XiaomiPhilipsEyecareLamp(name, light, model)
-        devices.append(device)
-        hass.data[DATA_KEY][host] = device
+        primary_device = XiaomiPhilipsEyecareLamp(name, light, model)
+        devices.append(primary_device)
+        hass.data[DATA_KEY][host] = primary_device
 
-        device = XiaomiPhilipsEyecareLampAmbientLight(
-            name + ' Ambient Light', light, model)
-        devices.append(device)
+        secondary_device = XiaomiPhilipsEyecareLampAmbientLight(
+            name, light, model)
+        devices.append(secondary_device)
         # The ambient light doesn't expose additional services.
         # A hass.data[DATA_KEY] entry isn't needed.
     elif model in ['philips.light.ceiling', 'philips.light.zyceiling']:
@@ -558,7 +559,7 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsBulb):
     """Representation of a Xiaomi Philips Ceiling Lamp."""
 
     def __init__(self, name, light, model):
-        """Initialize the plug switch."""
+        """Initialize the light device."""
         XiaomiPhilipsBulb.__init__(self, name, light, model)
 
         self._state_attrs.update({
@@ -617,7 +618,7 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight):
     """Representation of a Xiaomi Philips Eyecare Lamp 2."""
 
     def __init__(self, name, light, model):
-        """Initialize the plug switch."""
+        """Initialize the light device."""
         XiaomiPhilipsGenericLight.__init__(self, name, light, model)
 
         self._state_attrs.update({
@@ -746,6 +747,11 @@ class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight):
 
 class XiaomiPhilipsEyecareLampAmbientLight(XiaomiPhilipsAbstractLight):
     """Representation of a Xiaomi Philips Eyecare Lamp Ambient Light."""
+
+    def __init__(self, name, light, model):
+        """Initialize the light device."""
+        name = '{} Ambient Light'.format(name)
+        XiaomiPhilipsAbstractLight.__init__(self, name, light, model)
 
     @property
     def supported_features(self):
