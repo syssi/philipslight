@@ -271,7 +271,6 @@ class XiaomiPhilipsAbstractLight(Light):
             _LOGGER.error(mask_error, exc)
             return False
 
-
     async def async_turn_on(self, **kwargs):
         """Turn the light on."""
         await self._try_command(
