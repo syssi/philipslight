@@ -56,7 +56,7 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 ## Setup
 
 ```
-# confugration.yaml
+# configuration.yaml
 
 light:
   - platform: xiaomi_miio
