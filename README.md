@@ -53,6 +53,12 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
   - reminder
   - eyecare_mode
 
+### Philips Moonlight Bedside Lamp
+
+* Power (on, off)
+* Brightness
+* Color temperature (175...370 mireds)
+
 ## Setup
 
 ```

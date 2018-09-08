@@ -1,5 +1,5 @@
 """
-Support for Xiaomi Philips Lights (LED Ball & Ceiling Lamp, Eyecare Lamp 2).
+Support for Xiaomi Philips Lights (LED Ball & Ceiling Lamp, Eyecare Lamp 2, Bedside Lamp).
 
 For more details about this platform, please refer to the documentation
 https://home-assistant.io/components/light.xiaomi_miio/
@@ -37,6 +37,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
         ['philips.light.sread1',
          'philips.light.ceiling',
          'philips.light.zyceiling',
+         'philips.light.moonlight',
          'philips.light.bulb',
          'philips.light.candle',
          'philips.light.candle2',
@@ -145,7 +146,7 @@ async def async_setup_platform(hass, config, async_add_devices,
         devices.append(secondary_device)
         # The ambient light doesn't expose additional services.
         # A hass.data[DATA_KEY] entry isn't needed.
-    elif model in ['philips.light.ceiling', 'philips.light.zyceiling']:
+    elif model in ['philips.light.ceiling', 'philips.light.zyceiling', 'philips.light.moonlight']:
         from miio import Ceil
         light = Ceil(host, token)
         device = XiaomiPhilipsCeilingLamp(name, light, model, unique_id)
