@@ -58,6 +58,15 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 * Power (on, off)
 * Brightness
 * Color temperature (588-153 mireds / 1700K-6500K)
+* Scene (1, 2, 3, 4)
+* Attributes
+  - model
+  - scene
+  - sleep_assistant
+  - sleep_off_time
+  - total_assistant_sleep_time
+  - brand_sleep
+  - brand
 
 ## Setup
 
