@@ -16,11 +16,12 @@ import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.light import (
     PLATFORM_SCHEMA, ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS,
-    ATTR_COLOR_TEMP, SUPPORT_COLOR_TEMP, Light, ATTR_ENTITY_ID, DOMAIN, )
+    ATTR_COLOR_TEMP, SUPPORT_COLOR_TEMP, SUPPORT_COLOR, Light, ATTR_ENTITY_ID, DOMAIN, )
 
 from homeassistant.const import (CONF_NAME, CONF_HOST, CONF_TOKEN, )
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.util import dt
+import homeassistant.util.color as color_util
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -749,6 +750,7 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
         """Initialize the light device."""
         super().__init__(name, light, model, unique_id)
 
+        self._hs_color = None
         self._state_attrs.update({
             ATTR_SLEEP_ASSISTANT: None,
             ATTR_SLEEP_OFF_TIME: None,
@@ -768,10 +770,20 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
         return 588
 
     @property
+    def hs_color(self) -> tuple:
+        """Return the hs color value."""
+        return self._hs_color
+
+    @property
     def supported_features(self):
         """Return the supported features."""
         # TODO: Add SUPPORT_COLOR
         return SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the light on."""
+        # TODO: Add color support
+        super().async_turn_on(**kwargs)
 
     async def async_update(self):
         """Fetch state from the device."""
@@ -787,6 +799,7 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
                 state.color_temperature,
                 CCT_MIN, CCT_MAX,
                 self.max_mireds, self.min_mireds)
+            self._hs_color = self._get_hs(state.rgb)
 
             self._state_attrs.update({
                 ATTR_SCENE: state.scene,
@@ -805,3 +818,11 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
     async def async_set_delayed_turn_off(self, time_period: timedelta):
         """Set delayed turn off. Unsupported."""
         return
+
+    @staticmethod
+    def _get_hs(self, rgb: int):
+        blue = rgb & 0xff
+        green = (rgb >> 8) & 0xff
+        red = (rgb >> 16) & 0xff
+
+        return color_util.color_RGB_to_hs(red, green, blue)
