@@ -24,7 +24,7 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 
 * Power (on, off)
 * Brightness
-* Color temperature (175...370 mireds)
+* Color temperature (370-175 mireds / 2700K-5700K)
 * Scene (1, 2, 3, 4)
 * Night light mode (on, off)
 * Delayed turn off (Resolution in seconds)
@@ -57,7 +57,7 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 
 * Power (on, off)
 * Brightness
-* Color temperature (175...370 mireds)
+* Color temperature (588-153 mireds / 1700K-6500K)
 
 ## Setup
 

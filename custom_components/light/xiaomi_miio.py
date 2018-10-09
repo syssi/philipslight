@@ -63,6 +63,13 @@ ATTR_AUTOMATIC_COLOR_TEMPERATURE = 'automatic_color_temperature'
 ATTR_REMINDER = 'reminder'
 ATTR_EYECARE_MODE = 'eyecare_mode'
 
+# Moonlight
+ATTR_SLEEP_ASSISTANT = 'sleep_assistant'
+ATTR_SLEEP_OFF_TIME = 'sleep_off_time'
+ATTR_TOTAL_ASSISTANT_SLEEP_TIME = 'total_assistant_sleep_time'
+ATTR_BRAND_SLEEP = 'brand_sleep'
+ATTR_BRAND = 'brand'
+
 SERVICE_SET_SCENE = 'xiaomi_miio_set_scene'
 SERVICE_SET_DELAYED_TURN_OFF = 'xiaomi_miio_set_delayed_turn_off'
 SERVICE_REMINDER_ON = 'xiaomi_miio_reminder_on'
@@ -145,10 +152,16 @@ async def async_setup_platform(hass, config, async_add_entities,
         devices.append(secondary_device)
         # The ambient light doesn't expose additional services.
         # A hass.data[DATA_KEY] entry isn't needed.
-    elif model in ['philips.light.ceiling', 'philips.light.zyceiling', 'philips.light.moonlight']:
+    elif model in ['philips.light.ceiling', 'philips.light.zyceiling']:
         from miio import Ceil
         light = Ceil(host, token)
         device = XiaomiPhilipsCeilingLamp(name, light, model, unique_id)
+        devices.append(device)
+        hass.data[DATA_KEY][host] = device
+    elif model in ['philips.light.moonlight']:
+        from miio import Ceil
+        light = PhilipsMoonlight(host, token)
+        device = XiaomiPhilipsMoonlightLamp(name, light, model, unique_id)
         devices.append(device)
         hass.data[DATA_KEY][host] = device
     elif model in ['philips.light.bulb',
@@ -727,3 +740,68 @@ class XiaomiPhilipsEyecareLampAmbientLight(XiaomiPhilipsAbstractLight):
         except DeviceException as ex:
             self._available = False
             _LOGGER.error("Got exception while fetching the state: %s", ex)
+
+
+class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
+    """Representation of a Xiaomi Philips Zhirui Bedside Lamp."""
+
+    def __init__(self, name, light, model, unique_id):
+        """Initialize the light device."""
+        super().__init__(name, light, model, unique_id)
+
+        self._state_attrs.update({
+            ATTR_SLEEP_ASSISTANT: None,
+            ATTR_SLEEP_OFF_TIME: None,
+            ATTR_TOTAL_ASSISTANT_SLEEP_TIME: None,
+            ATTR_BRAND_SLEEP: None,
+            ATTR_BRAND: None,
+        })
+
+    @property
+    def min_mireds(self):
+        """Return the coldest color_temp that this light supports."""
+        return 153
+
+    @property
+    def max_mireds(self):
+        """Return the warmest color_temp that this light supports."""
+        return 588
+
+    @property
+    def supported_features(self):
+        """Return the supported features."""
+        # TODO: Add SUPPORT_COLOR
+        return SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP
+
+    async def async_update(self):
+        """Fetch state from the device."""
+        from miio import DeviceException
+        try:
+            state = await self.hass.async_add_job(self._light.status)
+            _LOGGER.debug("Got new state: %s", state)
+
+            self._available = True
+            self._state = state.is_on
+            self._brightness = ceil((255 / 100.0) * state.brightness)
+            self._color_temp = self.translate(
+                state.color_temperature,
+                CCT_MIN, CCT_MAX,
+                self.max_mireds, self.min_mireds)
+
+            self._state_attrs.update({
+                ATTR_SCENE: state.scene,
+                ATTR_SLEEP_ASSISTANT: state.sleep_assistant,
+                ATTR_SLEEP_OFF_TIME: state.sleep_off_time,
+                ATTR_TOTAL_ASSISTANT_SLEEP_TIME:
+                    state.total_assistant_sleep_time,
+                ATTR_BRAND_SLEEP: state.brand_sleep,
+                ATTR_BRAND: state.brand,
+            })
+
+        except DeviceException as ex:
+            self._available = False
+            _LOGGER.error("Got exception while fetching the state: %s", ex)
+
+    async def async_set_delayed_turn_off(self, time_period: timedelta):
+        """Set delayed turn off. Unsupported."""
+        return
