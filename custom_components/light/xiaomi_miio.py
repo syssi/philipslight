@@ -19,7 +19,7 @@ from homeassistant.components.light import (
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_TOKEN
 from homeassistant.exceptions import PlatformNotReady
 import homeassistant.helpers.config_validation as cv
-from homeassistant.util import dt
+from homeassistant.util import color, dt
 
 REQUIREMENTS = ['python-miio>=0.4.3', 'construct==2.9.45']
 
@@ -826,4 +826,4 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
         green = (rgb >> 8) & 0xff
         red = (rgb >> 16) & 0xff
 
-        return color_util.color_RGB_to_hs(red, green, blue)
+        return color.color_RGB_to_hs(red, green, blue)
