@@ -752,6 +752,7 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
         super().__init__(name, light, model, unique_id)
 
         self._hs_color = None
+        self._state_attrs.pop(ATTR_DELAYED_TURN_OFF)
         self._state_attrs.update({
             ATTR_SLEEP_ASSISTANT: None,
             ATTR_SLEEP_OFF_TIME: None,
