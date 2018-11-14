@@ -782,11 +782,6 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
         # TODO: Add SUPPORT_COLOR
         return SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP
 
-    async def async_turn_on(self, **kwargs):
-        """Turn the light on."""
-        # TODO: Add color support
-        super().async_turn_on(**kwargs)
-
     async def async_update(self):
         """Fetch state from the device."""
         from miio import DeviceException
