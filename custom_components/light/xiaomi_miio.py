@@ -47,7 +47,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
          ]),
 })
 
-REQUIREMENTS = ['python-miio>=0.4.2']
+REQUIREMENTS = ['python-miio>=0.4.3']
 
 # The light does not accept cct values < 1
 CCT_MIN = 1
