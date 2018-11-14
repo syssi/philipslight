@@ -821,7 +821,7 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
         return
 
     @staticmethod
-    def _get_hs(self, rgb: int):
+    def _get_hs(rgb: int):
         blue = rgb & 0xff
         green = (rgb >> 8) & 0xff
         red = (rgb >> 16) & 0xff
