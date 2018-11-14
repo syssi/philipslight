@@ -162,7 +162,7 @@ async def async_setup_platform(hass, config, async_add_entities,
         devices.append(device)
         hass.data[DATA_KEY][host] = device
     elif model in ['philips.light.moonlight']:
-        from miio import Ceil
+        from miio import PhilipsMoonlight
         light = PhilipsMoonlight(host, token)
         device = XiaomiPhilipsMoonlightLamp(name, light, model, unique_id)
         devices.append(device)
