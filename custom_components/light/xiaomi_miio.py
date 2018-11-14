@@ -19,7 +19,7 @@ from homeassistant.components.light import (
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_TOKEN
 from homeassistant.exceptions import PlatformNotReady
 import homeassistant.helpers.config_validation as cv
-from homeassistant.util import dt, color
+from homeassistant.util import color, dt
 
 REQUIREMENTS = ['python-miio>=0.4.3', 'construct==2.9.45']
 
