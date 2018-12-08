@@ -16,8 +16,9 @@ from math import ceil
 import voluptuous as vol
 
 from homeassistant.components.light import (
-    ATTR_BRIGHTNESS, ATTR_COLOR_TEMP, ATTR_ENTITY_ID, DOMAIN, PLATFORM_SCHEMA,
-    SUPPORT_BRIGHTNESS, SUPPORT_COLOR_TEMP, Light)
+    ATTR_BRIGHTNESS, ATTR_HS_COLOR, ATTR_COLOR_TEMP, ATTR_ENTITY_ID, DOMAIN,
+    PLATFORM_SCHEMA, SUPPORT_BRIGHTNESS, SUPPORT_COLOR, SUPPORT_COLOR_TEMP,
+    Light)
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_TOKEN
 from homeassistant.exceptions import PlatformNotReady
 import homeassistant.helpers.config_validation as cv
@@ -781,14 +782,103 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
     @property
     def supported_features(self):
         """Return the supported features."""
-        # TODO: Add SUPPORT_COLOR
-        return SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP
+        return SUPPORT_BRIGHTNESS | SUPPORT_COLOR | SUPPORT_COLOR_TEMP
 
+    async def async_turn_on(self, **kwargs):
+        """Turn the light on."""
+        from miio.utils import rgb_to_int
 
-async def async_turn_on(self, **kwargs):
-    """Turn the light on."""
-    # TODO: Add color support
-    await super().async_turn_on(**kwargs)
+        if ATTR_COLOR_TEMP in kwargs:
+            color_temp = kwargs[ATTR_COLOR_TEMP]
+            percent_color_temp = self.translate(
+                color_temp, self.max_mireds,
+                self.min_mireds, CCT_MIN, CCT_MAX)
+
+        if ATTR_BRIGHTNESS in kwargs:
+            brightness = kwargs[ATTR_BRIGHTNESS]
+            percent_brightness = ceil(100 * brightness / 255.0)
+
+        if ATTR_HS_COLOR in kwargs:
+            hs_color = kwargs[ATTR_HS_COLOR]
+            rgb = color.color_hs_to_RGB(*hs_color)
+
+        if ATTR_BRIGHTNESS in kwargs and ATTR_HS_COLOR in kwargs:
+            _LOGGER.debug(
+                "Setting brightness and color: "
+                "%s %s%%, %s",
+                brightness, percent_brightness, rgb)
+
+            # FIXME: set_brightness_and_rgb(self, brightness: int, rgb: int): <-- int vs. Tuple
+            result = await self._try_command(
+                "Setting brightness and color failed: "
+                "%s bri, %s color",
+                self._light.set_brightness_and_rgb,
+                percent_brightness, rgb_to_int(*rgb))
+
+            if result:
+                self._hs_color = hs_color
+                self._brightness = brightness
+
+        elif ATTR_BRIGHTNESS in kwargs and ATTR_COLOR_TEMP in kwargs:
+            _LOGGER.debug(
+                "Setting brightness and color temperature: "
+                "%s %s%%, %s mireds, %s%% cct",
+                brightness, percent_brightness,
+                color_temp, percent_color_temp)
+
+            result = await self._try_command(
+                "Setting brightness and color temperature failed: "
+                "%s bri, %s cct",
+                self._light.set_brightness_and_color_temperature,
+                percent_brightness, percent_color_temp)
+
+            if result:
+                self._color_temp = color_temp
+                self._brightness = brightness
+
+        elif ATTR_HS_COLOR in kwargs:
+            _LOGGER.debug(
+                "Setting color: %s", color)
+
+            result = await self._try_command(
+                "Setting color failed: %s cct",
+                self._light.set_color, rgb)
+
+            if result:
+                self._hs_color = hs_color
+
+        elif ATTR_COLOR_TEMP in kwargs:
+            _LOGGER.debug(
+                "Setting color temperature: "
+                "%s mireds, %s%% cct",
+                color_temp, percent_color_temp)
+
+            result = await self._try_command(
+                "Setting color temperature failed: %s cct",
+                self._light.set_color_temperature, percent_color_temp)
+
+            if result:
+                self._color_temp = color_temp
+
+        elif ATTR_BRIGHTNESS in kwargs:
+            brightness = kwargs[ATTR_BRIGHTNESS]
+            percent_brightness = ceil(100 * brightness / 255.0)
+
+            _LOGGER.debug(
+                "Setting brightness: %s %s%%",
+                brightness, percent_brightness)
+
+            result = await self._try_command(
+                "Setting brightness failed: %s",
+                self._light.set_brightness, percent_brightness)
+
+            if result:
+                self._brightness = brightness
+
+        else:
+            await self._try_command(
+                "Turning the light on failed.", self._light.on)
+
 
     async def async_update(self):
         """Fetch state from the device."""
