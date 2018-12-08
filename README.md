@@ -57,6 +57,7 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 
 * Power (on, off)
 * Brightness
+* Color
 * Color temperature (588-153 mireds / 1700K-6500K)
 * Scene (1, 2, 3, 4)
 * Attributes
