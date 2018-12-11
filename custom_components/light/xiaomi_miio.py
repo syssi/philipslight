@@ -786,8 +786,6 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
 
     async def async_turn_on(self, **kwargs):
         """Turn the light on."""
-        from miio.utils import rgb_to_int
-
         if ATTR_COLOR_TEMP in kwargs:
             color_temp = kwargs[ATTR_COLOR_TEMP]
             percent_color_temp = self.translate(
