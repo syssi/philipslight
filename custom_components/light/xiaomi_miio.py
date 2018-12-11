@@ -838,10 +838,10 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
 
         elif ATTR_HS_COLOR in kwargs:
             _LOGGER.debug(
-                "Setting color: %s", color)
+                "Setting color: %s", rgb)
 
             result = await self._try_command(
-                "Setting color failed: %s cct",
+                "Setting color failed: %s",
                 self._light.set_rgb, rgb)
 
             if result:
