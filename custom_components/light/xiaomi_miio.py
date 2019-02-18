@@ -885,6 +885,10 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
         try:
             state = await self.hass.async_add_executor_job(self._light.status)
         except DeviceException as ex:
+            if "code" in ex and ex["code"] == -5001:
+                _LOGGER.debug("The device is in music mode. Update skipped.")
+                return
+
             self._available = False
             _LOGGER.error("Got exception while fetching the state: %s", ex)
             return
