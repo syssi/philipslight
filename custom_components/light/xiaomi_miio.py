@@ -878,7 +878,6 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
             await self._try_command(
                 "Turning the light on failed.", self._light.on)
 
-
     async def async_update(self):
         """Fetch state from the device."""
         from miio import DeviceException
