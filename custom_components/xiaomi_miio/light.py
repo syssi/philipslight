@@ -1,11 +1,4 @@
-"""
-Support for Xiaomi Philips Lights.
-
-LED Ball, Candle, Downlight, Ceiling, Eyecare 2, Bedside & Desklamp Lamp.
-
-For more details about this platform, please refer to the documentation
-https://home-assistant.io/components/light.xiaomi_miio/
-"""
+"""Support for Xiaomi Philips Lights."""
 import asyncio
 import datetime
 from datetime import timedelta
@@ -24,7 +17,7 @@ from homeassistant.exceptions import PlatformNotReady
 import homeassistant.helpers.config_validation as cv
 from homeassistant.util import color, dt
 
-REQUIREMENTS = ['python-miio==0.4.4', 'construct==2.9.45']
+REQUIREMENTS = ['python-miio==0.4.5', 'construct==2.9.45']
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -89,7 +82,7 @@ XIAOMI_MIIO_SERVICE_SCHEMA = vol.Schema({
 
 SERVICE_SCHEMA_SET_SCENE = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
     vol.Required(ATTR_SCENE):
-        vol.All(vol.Coerce(int), vol.Clamp(min=1, max=4))
+        vol.All(vol.Coerce(int), vol.Clamp(min=1, max=6))
 })
 
 SERVICE_SCHEMA_SET_DELAYED_TURN_OFF = XIAOMI_MIIO_SERVICE_SCHEMA.extend({
@@ -754,6 +747,7 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
         """Initialize the light device."""
         super().__init__(name, light, model, unique_id)
 
+        self._music_mode = False
         self._hs_color = None
         self._state_attrs.pop(ATTR_DELAYED_TURN_OFF)
         self._state_attrs.update({
@@ -806,13 +800,11 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
                 "%s %s%%, %s",
                 brightness, percent_brightness, rgb)
 
-            # FIXME: set_brightness_and_rgb(self, brightness: int, rgb: int): <-- int vs. Tuple
-            params = list(rgb)
-            params.append(percent_brightness)
             result = await self._try_command(
                 "Setting brightness and color failed: "
                 "%s bri, %s color",
-                self._light.raw_command, 'set_brirgb', params)
+                self._light.set_brightness_and_rgb,
+                percent_brightness, rgb)
 
             if result:
                 self._hs_color = hs_color
@@ -841,7 +833,7 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
 
             result = await self._try_command(
                 "Setting color failed: %s",
-                self._light.raw_command, 'set_rgb', list(rgb))
+                self._light.set_rgb, rgb)
 
             if result:
                 self._hs_color = hs_color
@@ -880,19 +872,23 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
 
     async def async_update(self):
         """Fetch state from the device."""
-        from miio import DeviceException
+        from miio import DeviceException, DeviceError
         try:
             state = await self.hass.async_add_executor_job(self._light.status)
         except DeviceException as ex:
-            if "code" in ex and ex["code"] == -5001:
-                _LOGGER.debug("The device is in music mode. Update skipped.")
-                return
-
             self._available = False
             _LOGGER.error("Got exception while fetching the state: %s", ex)
             return
+        except DeviceError as ex:
+            if "code" in ex and ex["code"] == -5001:
+                if not self._music_mode:
+                    self._music_mode = True
+                    _LOGGER.info("Device in music mode. Update skipped.")
+                return
+            raise
 
         _LOGGER.debug("Got new state: %s", state)
+        self._music_mode = False
         self._available = True
         self._state = state.is_on
         self._brightness = ceil((255 / 100.0) * state.brightness)
