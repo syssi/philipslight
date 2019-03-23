@@ -75,17 +75,17 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 # configuration.yaml
 
 light:
-  - platform: xiaomi_miio
+  - platform: xiaomi_miio_philipslight
     name: Xiaomi Philips Smart LED Ball
     host: 192.168.130.67
     token: da548d86f55996413d82eea94279d2ff
     model: philips.light.bulb
-  - platform: xiaomi_miio
+  - platform: xiaomi_miio_philipslight
     name: Xiaomi Philips Smart LED Ceiling Lamp
     host: 192.168.130.68
     token: 439e1a89ee5648d20482afa7839ef2ee
     model: philips.light.ceiling
-  - platform: xiaomi_miio
+  - platform: xiaomi_miio_philipslight
     name: Xiaomi Philips EyeCare Smart Lamp 2
     host: 192.168.130.69
     token: e8b19da37825a3056e84c522f05efce0
