@@ -17,7 +17,7 @@ from homeassistant.exceptions import PlatformNotReady
 import homeassistant.helpers.config_validation as cv
 from homeassistant.util import color, dt
 
-REQUIREMENTS = ['python-miio==0.4.5', 'construct==2.9.45']
+REQUIREMENTS = ['python-miio>=0.4.6', 'construct==2.9.45']
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -872,16 +872,17 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
 
     async def async_update(self):
         """Fetch state from the device."""
-        from miio import DeviceException
+        from miio import DeviceException, DeviceError
         try:
             state = await self.hass.async_add_executor_job(self._light.status)
-        except DeviceException as ex:
-            if "code" in ex and ex["code"] == -5001:
+        except DeviceError as error:
+            if error.code == -5001:
                 if not self._music_mode:
                     self._music_mode = True
                     _LOGGER.info("Device in music mode. Update skipped.")
                 return
-
+            raise
+        except DeviceException as ex:
             self._available = False
             _LOGGER.error("Got exception while fetching the state: %s", ex)
             return
