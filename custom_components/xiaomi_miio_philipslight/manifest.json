@@ -1,0 +1,13 @@
+{
+  "domain": "xiaomi_miio_philipslight",
+  "name": "Xiaomi Philips Lights",
+  "documentation": "https://github.com/syssi/philipslight",
+  "requirements": [
+    "construct==2.9.45",
+    "python-miio==0.4.6"
+  ],
+  "dependencies": [],
+  "codeowners": [
+    "@syssi"
+  ]
+}
