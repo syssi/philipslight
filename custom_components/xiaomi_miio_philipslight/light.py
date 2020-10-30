@@ -1,21 +1,13 @@
 """Support for Xiaomi Philips Lights."""
 import asyncio
 import datetime
+import logging
 from datetime import timedelta
 from functools import partial
-import logging
 from math import ceil
 
-from miio import (  # pylint: disable=import-error
-    Ceil,
-    Device,
-    DeviceException,
-    PhilipsBulb,
-    PhilipsEyecare,
-    PhilipsMoonlight,
-)
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP,
@@ -28,8 +20,16 @@ from homeassistant.components.light import (
 )
 from homeassistant.const import ATTR_ENTITY_ID, CONF_HOST, CONF_NAME, CONF_TOKEN
 from homeassistant.exceptions import PlatformNotReady
-import homeassistant.helpers.config_validation as cv
 from homeassistant.util import color, dt
+from miio import (  # pylint: disable=import-error
+    Ceil,
+    Device,
+    DeviceError,
+    DeviceException,
+    PhilipsBulb,
+    PhilipsEyecare,
+    PhilipsMoonlight,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
