@@ -1,18 +1,18 @@
 """Support for Xiaomi Philips Lights."""
 import asyncio
 import datetime
+import logging
 from datetime import timedelta
 from functools import partial
-import logging
 from math import ceil
 
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
-    ATTR_HS_COLOR,
     ATTR_COLOR_TEMP,
     ATTR_ENTITY_ID,
+    ATTR_HS_COLOR,
     PLATFORM_SCHEMA,
     SUPPORT_BRIGHTNESS,
     SUPPORT_COLOR,
@@ -21,7 +21,6 @@ from homeassistant.components.light import (
 )
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_TOKEN
 from homeassistant.exceptions import PlatformNotReady
-import homeassistant.helpers.config_validation as cv
 from homeassistant.util import color, dt
 
 _LOGGER = logging.getLogger(__name__)
@@ -926,7 +925,7 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
 
     async def async_update(self):
         """Fetch state from the device."""
-        from miio import DeviceException, DeviceError
+        from miio import DeviceError, DeviceException
 
         try:
             state = await self.hass.async_add_executor_job(self._light.status)
