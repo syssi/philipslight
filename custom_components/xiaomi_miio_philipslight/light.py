@@ -13,7 +13,6 @@ from homeassistant.components.light import (
     ATTR_HS_COLOR,
     ATTR_COLOR_TEMP,
     ATTR_ENTITY_ID,
-    DOMAIN,
     PLATFORM_SCHEMA,
     SUPPORT_BRIGHTNESS,
     SUPPORT_COLOR,
@@ -29,6 +28,7 @@ _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_NAME = "Xiaomi Philips Light"
 DATA_KEY = "light.xiaomi_miio"
+DOMAIN = "xiaomi_miio_philipslight"
 
 CONF_MODEL = "model"
 
@@ -77,14 +77,14 @@ ATTR_TOTAL_ASSISTANT_SLEEP_TIME = "total_assistant_sleep_time"
 ATTR_BRAND_SLEEP = "brand_sleep"
 ATTR_BRAND = "brand"
 
-SERVICE_SET_SCENE = "xiaomi_miio_set_scene"
-SERVICE_SET_DELAYED_TURN_OFF = "xiaomi_miio_set_delayed_turn_off"
-SERVICE_REMINDER_ON = "xiaomi_miio_reminder_on"
-SERVICE_REMINDER_OFF = "xiaomi_miio_reminder_off"
-SERVICE_NIGHT_LIGHT_MODE_ON = "xiaomi_miio_night_light_mode_on"
-SERVICE_NIGHT_LIGHT_MODE_OFF = "xiaomi_miio_night_light_mode_off"
-SERVICE_EYECARE_MODE_ON = "xiaomi_miio_eyecare_mode_on"
-SERVICE_EYECARE_MODE_OFF = "xiaomi_miio_eyecare_mode_off"
+SERVICE_SET_SCENE = "light_set_scene"
+SERVICE_SET_DELAYED_TURN_OFF = "light_set_delayed_turn_off"
+SERVICE_REMINDER_ON = "light_reminder_on"
+SERVICE_REMINDER_OFF = "light_reminder_off"
+SERVICE_NIGHT_LIGHT_MODE_ON = "light_night_light_mode_on"
+SERVICE_NIGHT_LIGHT_MODE_OFF = "light_night_light_mode_off"
+SERVICE_EYECARE_MODE_ON = "light_eyecare_mode_on"
+SERVICE_EYECARE_MODE_OFF = "light_eyecare_mode_off"
 
 XIAOMI_MIIO_SERVICE_SCHEMA = vol.Schema({vol.Optional(ATTR_ENTITY_ID): cv.entity_ids})
 
