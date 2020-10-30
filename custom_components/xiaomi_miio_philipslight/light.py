@@ -9,6 +9,7 @@ from math import ceil
 from miio import (  # pylint: disable=import-error
     Ceil,
     Device,
+    DeviceError,
     DeviceException,
     PhilipsBulb,
     PhilipsEyecare,
