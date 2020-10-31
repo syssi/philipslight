@@ -102,6 +102,18 @@ Configuration variables:
 - **name** (*Optional*): The name of your light.
 - **model** (*Optional*): The model of your light. Valid values are `philips.light.sread1`, `philips.light.ceiling`, `philips.light.zyceiling`, `philips.light.moonlight`, `philips.light.bulb`, `philips.light.candle`, `philips.light.candle2`, `philips.light.mono1` and `philips.light.downlight`. This setting can be used to bypass the device model detection and is recommended if your device isn't always available.
 
+## Debugging
+
+If the custom component doesn't work out of the box for your device please update your configuration to increase the log level:
+
+```
+logger:
+  default: warn
+  logs:
+    custom_components.xiaomi_miio_philipslight: debug
+    miio: debug
+```
+
 ## Platform services
 
 #### Service `xiaomi_miio_philipslight.light_set_scene`
