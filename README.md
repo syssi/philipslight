@@ -69,6 +69,10 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
   - brand_sleep
   - brand
 
+## Install
+
+You can install this custom component by adding this repository ([https://github.com/syssi/philipslight](https://github.com/syssi/philipslight/)) to [HACS](https://hacs.xyz/) in the settings menu of HACS first. You will find the custom component in the integration menu afterwards, look for 'Xiaomi Philips Lights Integration'. Alternatively, you can install it manually by copying the custom_component folder to your Home Assistant configuration folder.
+
 ## Setup
 
 ```
