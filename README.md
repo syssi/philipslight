@@ -15,8 +15,8 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 | Philips EyeCare Smart Lamp 2    | `philips.light.sread1`    |             | |
 | Philips Moonlight Bedside Lamp  | `philips.light.moonlight` |             | |
 | Philips LED Ceiling Light 620mm | `philips.light.zyceiling` |             | |
-| Philips Zhirui Smart LED Bulb E14 Candle Lamp  | `philips.light.candle`    | 9290018615  | *scrub*, E14, 200lm, 3000K-5700K, 4x0.25W CW + 4x0.25W WW / LED  |
-| Philips Zhirui Smart LED Bulb E14 Candle Lamp  | `philips.light.candle2`   |             | *crystal*, E14, 200lm, 3000K-5700K, 4x0.25W CW + 4x0.25W WW / LED  |
+| Philips Zhirui Smart LED Bulb E14 Candle Lamp  | `philips.light.candle`    | 9290018615  | **scrub**, E14, 200lm, 3000K-5700K, 4x0.25W CW + 4x0.25W WW / LED  |
+| Philips Zhirui Smart LED Bulb E14 Candle Lamp  | `philips.light.candle2`   |             | **crystal**, E14, 200lm, 3000K-5700K, 4x0.25W CW + 4x0.25W WW / LED  |
 | Philips Zhirui Desk Lamp        | `philips.light.mono1`     |             | |
 | Philips Zhirui Downlight        | `philips.light.downlight` |             | |
 
