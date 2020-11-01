@@ -6,6 +6,20 @@ Thanks to [Rytilahti](https://github.com/rytilahti/python-mirobo) for all the wo
 
 Please follow the instructions on [Retrieving the Access Token](https://home-assistant.io/components/xiaomi/#retrieving-the-access-token) to get the API token to use in the configuration.yaml file.
 
+## Supported devices
+
+| Name                            | Model                   | Model no.   | Specs |
+| ------------------------------- | ----------------------- | ----------- | ----- |
+| Philips Smart LED Ball          | philips.light.bulb      | 9290012800  | 450lm, 3000K-5700K, 6.5W (12x0.37W / LED)  |
+| Philips Smart LED Ceiling Lamp  | philips.light.ceiling   |             | |
+| Philips EyeCare Smart Lamp 2    | philips.light.sread1    |             | |
+| Philips Moonlight Bedside Lamp  | philips.light.moonlight |             | |
+| Philips LED Ceiling Light 620mm | philips.light.zyceiling |             | |
+| Philips Zhirui Smart LED Bulb E14 Candle Lamp  | philips.light.candle    |             | scrub  |
+| Philips Zhirui Smart LED Bulb E14 Candle Lamp  | philips.light.candle2   |             | crystal  |
+| Philips Zhirui Desk Lamp        | philips.light.mono1     |             | |
+| Philips Zhirui Downlight        | philips.light.downlight |             | |
+
 ## Features
 
 ### Philips LED Ball Lamp
