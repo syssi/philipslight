@@ -21,6 +21,10 @@ from homeassistant.components.light import (
 from homeassistant.const import ATTR_ENTITY_ID, CONF_HOST, CONF_NAME, CONF_TOKEN
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.util import color, dt
+from homeassistant.util.color import (
+    color_temperature_kelvin_to_mired as kelvin_to_mired,
+    color_temperature_mired_to_kelvin as mired_to_kelvin,
+)
 from miio import (  # pylint: disable=import-error
     Ceil,
     Device,
@@ -29,6 +33,7 @@ from miio import (  # pylint: disable=import-error
     PhilipsBulb,
     PhilipsEyecare,
     PhilipsMoonlight,
+    Yeelight,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -38,6 +43,8 @@ DATA_KEY = "light.xiaomi_miio_philipslight"
 DOMAIN = "xiaomi_miio_philipslight"
 
 CONF_MODEL = "model"
+
+MODEL_YEELIGHT_CEIL26 = "yeelink.light.ceil26"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -55,6 +62,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
                 "philips.light.candle2",
                 "philips.light.mono1",
                 "philips.light.downlight",
+                MODEL_YEELIGHT_CEIL26,
             ]
         ),
     }
@@ -186,6 +194,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     elif model == "philips.light.mono1":
         light = PhilipsBulb(host, token)
         device = XiaomiPhilipsGenericLight(name, light, model, unique_id)
+        devices.append(device)
+        hass.data[DATA_KEY][host] = device
+    elif model in [MODEL_YEELIGHT_CEIL26]:
+        light = Yeelight(host, token)
+        device = YeelightGenericLight(name, light, model, unique_id)
         devices.append(device)
         hass.data[DATA_KEY][host] = device
     else:
@@ -961,3 +974,87 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
     async def async_set_delayed_turn_off(self, time_period: timedelta):
         """Set delayed turn off. Unsupported."""
         return
+
+
+class YeelightGenericLight(XiaomiPhilipsAbstractLight):
+    """Representation of a generic Yeelight."""
+
+    def __init__(self, name, light, model, unique_id):
+        """Initialize the light device."""
+        super().__init__(name, light, model, unique_id)
+        self._min_mireds = kelvin_to_mired(6500)
+        self._max_mireds = kelvin_to_mired(2700)
+        self._color_temp = None
+
+    @property
+    def color_temp(self):
+        """Return the color temperature."""
+        return self._color_temp
+
+    @property
+    def min_mireds(self):
+        """Return the coldest color_temp that this light supports."""
+        return self._min_mireds
+
+    @property
+    def max_mireds(self):
+        """Return the warmest color_temp that this light supports."""
+        return self._max_mireds
+
+    @property
+    def supported_features(self):
+        """Return the supported features."""
+        return SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the light on."""
+        if ATTR_COLOR_TEMP in kwargs:
+            color_temp = kwargs[ATTR_COLOR_TEMP]
+
+            _LOGGER.debug(
+                "Setting color temperature: %s mireds", color_temp,
+            )
+
+            result = await self._try_command(
+                "Setting color temperature failed: %s kelvin",
+                self._light.set_color_temp,
+                mired_to_kelvin(color_temp),
+            )
+
+            if result:
+                self._color_temp = color_temp
+
+        elif ATTR_BRIGHTNESS in kwargs:
+            brightness = kwargs[ATTR_BRIGHTNESS]
+            percent_brightness = ceil(100 * brightness / 255.0)
+
+            _LOGGER.debug("Setting brightness: %s %s%%", brightness, percent_brightness)
+
+            result = await self._try_command(
+                "Setting brightness failed: %s",
+                self._light.set_brightness,
+                percent_brightness,
+            )
+
+            if result:
+                self._brightness = brightness
+
+        else:
+            await self._try_command("Turning the light on failed.", self._light.on)
+
+    async def async_update(self):
+        """Fetch state from the device."""
+        try:
+            state = await self.hass.async_add_executor_job(self._light.status)
+        except DeviceException as ex:
+            if self._available:
+                self._available = False
+                _LOGGER.error("Got exception while fetching the state: %s", ex)
+
+            return
+
+        _LOGGER.debug("Got new state: %s", state)
+        self._available = True
+        self._state = state.is_on
+        self._brightness = ceil((255 / 100.0) * state.brightness)
+        self._color_temp = kelvin_to_mired(state.color_temp)
