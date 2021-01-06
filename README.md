@@ -6,6 +6,21 @@ Thanks to [Rytilahti](https://github.com/rytilahti/python-mirobo) for all the wo
 
 Please follow the instructions on [Retrieving the Access Token](https://home-assistant.io/components/xiaomi/#retrieving-the-access-token) to get the API token to use in the configuration.yaml file.
 
+## Supported devices
+
+| Name                             | Model                   | Model no.   | Specs |
+| -------------------------------- | ----------------------- | ----------- | ----- |
+| Philips Smart LED Ball           | `philips.light.bulb`      | 9290012800  | E27, 450lm, 3000K-5700K, 6.5W (12x0.37W / LED)  |
+| Philips Smart LED Ceiling Lamp   | `philips.light.ceiling`   |             | |
+| Philips EyeCare Smart Lamp       | `philips.light.sread1`    |             | ESP8266 version  |
+| Philips EyeCare Smart Lamp Gen2  | `philips.light.sread2`    |             | ESP32 version  |
+| Philips Moonlight Bedside Lamp   | `philips.light.moonlight` |             | |
+| Philips LED Ceiling Light 620mm  | `philips.light.zyceiling` |             | |
+| Philips Zhirui Smart LED Bulb E14 Candle Lamp  | `philips.light.candle`    | 9290018615  | **scrub**, E14, 200lm, 3000K-5700K, 4x0.25W CW + 4x0.25W WW / LED  |
+| Philips Zhirui Smart LED Bulb E14 Candle Lamp  | `philips.light.candle2`   |             | **crystal**, E14, 200lm, 3000K-5700K, 4x0.25W CW + 4x0.25W WW / LED  |
+| Philips Zhirui Desk Lamp         | `philips.light.mono1`     |             | |
+| Philips Zhirui Downlight         | `philips.light.downlight` |             | |
+
 ## Features
 
 ### Philips LED Ball Lamp
@@ -69,6 +84,10 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
   - brand_sleep
   - brand
 
+## Install
+
+You can install this custom component by adding this repository ([https://github.com/syssi/philipslight](https://github.com/syssi/philipslight/)) to [HACS](https://hacs.xyz/) in the settings menu of HACS first. You will find the custom component in the integration menu afterwards, look for 'Xiaomi Philips Lights Integration'. Alternatively, you can install it manually by copying the custom_component folder to your Home Assistant configuration folder.
+
 ## Setup
 
 ```
@@ -97,6 +116,18 @@ Configuration variables:
 - **token** (*Required*): The API token of your light.
 - **name** (*Optional*): The name of your light.
 - **model** (*Optional*): The model of your light. Valid values are `philips.light.sread1`, `philips.light.ceiling`, `philips.light.zyceiling`, `philips.light.moonlight`, `philips.light.bulb`, `philips.light.candle`, `philips.light.candle2`, `philips.light.mono1` and `philips.light.downlight`. This setting can be used to bypass the device model detection and is recommended if your device isn't always available.
+
+## Debugging
+
+If the custom component doesn't work out of the box for your device please update your configuration to increase the log level:
+
+```
+logger:
+  default: warn
+  logs:
+    custom_components.xiaomi_miio_philipslight: debug
+    miio: debug
+```
 
 ## Platform services
 

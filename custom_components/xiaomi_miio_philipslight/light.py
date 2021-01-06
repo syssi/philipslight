@@ -47,6 +47,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_MODEL): vol.In(
             [
                 "philips.light.sread1",
+                "philips.light.sread2",
                 "philips.light.ceiling",
                 "philips.light.zyceiling",
                 "philips.light.moonlight",
@@ -123,8 +124,6 @@ SERVICE_TO_METHOD = {
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the light from config."""
-    from miio import Device, DeviceException
-
     if DATA_KEY not in hass.data:
         hass.data[DATA_KEY] = {}
 
@@ -153,7 +152,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         except DeviceException as ex:
             raise PlatformNotReady from ex
 
-    if model == "philips.light.sread1":
+    if model in ["philips.light.sread1", "philips.light.sread2"]:
         light = PhilipsEyecare(host, token)
         primary_device = XiaomiPhilipsEyecareLamp(name, light, model, unique_id)
         devices.append(primary_device)
@@ -360,8 +359,6 @@ class XiaomiPhilipsGenericLight(XiaomiPhilipsAbstractLight):
 
     async def async_update(self):
         """Fetch state from the device."""
-        from miio import DeviceException
-
         try:
             state = await self.hass.async_add_executor_job(self._light.status)
         except DeviceException as ex:
