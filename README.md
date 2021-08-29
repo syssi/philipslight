@@ -1,5 +1,11 @@
 # Xiaomi Philips Lights
 
+![GitHub actions](https://github.com/syssi/philipslight/actions/workflows/ci.yaml/badge.svg)
+![GitHub stars](https://img.shields.io/github/stars/syssi/philipslight)
+![GitHub forks](https://img.shields.io/github/forks/syssi/philipslight)
+![GitHub watchers](https://img.shields.io/github/watchers/syssi/philipslight)
+[!["Buy Me A Coffee"](https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg)](https://www.buymeacoffee.com/syssi)
+
 The component allows you to control the state of your Xiaomi Philips LED Ball Lamp, Xiaomi Philips LED Ceiling Lamp and Xiaomi Philips Eyecare Smart Lamp 2.
 
 Thanks to [Rytilahti](https://github.com/rytilahti/python-mirobo) for all the work.
