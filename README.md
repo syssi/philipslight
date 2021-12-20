@@ -17,6 +17,7 @@ Please follow the instructions on [Retrieving the Access Token](https://home-ass
 | Name                             | Model                   | Model no.   | Specs |
 | -------------------------------- | ----------------------- | ----------- | ----- |
 | Philips Smart LED Ball           | `philips.light.bulb`      | 9290012800  | E27, 450lm, 3000K-5700K, 6.5W (12x0.37W / LED)  |
+| Philips Smart LED Bulb (Dimmable)  | `philips.light.hbulb`   | 9290020093  | E27, 806lm, 2700K, 9W  |
 | Philips Smart LED Ceiling Lamp   | `philips.light.ceiling`   |             | |
 | Philips EyeCare Smart Lamp       | `philips.light.sread1`    |             | ESP8266 version  |
 | Philips EyeCare Smart Lamp Gen2  | `philips.light.sread2`    |             | ESP32 version  |
