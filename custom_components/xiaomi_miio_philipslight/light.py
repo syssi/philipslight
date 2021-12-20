@@ -56,6 +56,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
                 "philips.light.candle2",
                 "philips.light.mono1",
                 "philips.light.downlight",
+                "philips.light.hbulb",
             ]
         ),
     }
@@ -184,7 +185,10 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         device = XiaomiPhilipsBulb(name, light, model, unique_id)
         devices.append(device)
         hass.data[DATA_KEY][host] = device
-    elif model == "philips.light.mono1":
+    elif model in [
+        "philips.light.mono1",
+        "philips.light.hbulb",
+    ]:
         light = PhilipsBulb(host, token)
         device = XiaomiPhilipsGenericLight(name, light, model, unique_id)
         devices.append(device)
