@@ -10,7 +10,7 @@ The component allows you to control the state of your Xiaomi Philips LED Ball La
 
 Thanks to [Rytilahti](https://github.com/rytilahti/python-mirobo) for all the work.
 
-Please follow the instructions on [Retrieving the Access Token](https://home-assistant.io/components/xiaomi/#retrieving-the-access-token) to get the API token to use in the configuration.yaml file.
+Please follow the instructions on [Retrieving the Access Token](https://www.home-assistant.io/integrations/xiaomi_miio/#xiaomi-cloud-tokens-extractor) to get the API token to use in the configuration.yaml file.
 
 ## Supported devices
 

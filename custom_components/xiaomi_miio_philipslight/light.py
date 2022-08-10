@@ -21,7 +21,7 @@ from homeassistant.components.light import (
 from homeassistant.const import ATTR_ENTITY_ID, CONF_HOST, CONF_NAME, CONF_TOKEN
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.util import color, dt
-from miio import (  # pylint: disable=import-error
+from miio import (
     Ceil,
     Device,
     DeviceError,
