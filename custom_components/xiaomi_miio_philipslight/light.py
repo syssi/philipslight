@@ -13,9 +13,7 @@ from homeassistant.components.light import (
     ATTR_COLOR_TEMP,
     ATTR_HS_COLOR,
     PLATFORM_SCHEMA,
-    SUPPORT_BRIGHTNESS,
-    SUPPORT_COLOR,
-    SUPPORT_COLOR_TEMP,
+    ColorMode,
     LightEntity,
 )
 from homeassistant.const import ATTR_ENTITY_ID, CONF_HOST, CONF_NAME, CONF_TOKEN
@@ -244,6 +242,9 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 class XiaomiPhilipsAbstractLight(LightEntity):
     """Representation of a Abstract Xiaomi Philips Light."""
 
+    _attr_color_mode = ColorMode.BRIGHTNESS
+    _attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+
     def __init__(self, name, light, model, unique_id):
         """Initialize the light device."""
         self._name = name
@@ -291,11 +292,6 @@ class XiaomiPhilipsAbstractLight(LightEntity):
     def brightness(self):
         """Return the brightness of this light between 0..255."""
         return self._brightness
-
-    @property
-    def supported_features(self):
-        """Return the supported features."""
-        return SUPPORT_BRIGHTNESS
 
     async def _try_command(self, mask_error, func, *args, **kwargs):
         """Call a light command handling error messages."""
@@ -428,6 +424,9 @@ class XiaomiPhilipsGenericLight(XiaomiPhilipsAbstractLight):
 class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
     """Representation of a Xiaomi Philips Bulb."""
 
+    _attr_color_mode = ColorMode.COLOR_TEMP
+    _attr_supported_color_modes = {ColorMode.COLOR_TEMP}
+
     def __init__(self, name, light, model, unique_id):
         """Initialize the light device."""
         super().__init__(name, light, model, unique_id)
@@ -448,11 +447,6 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
     def max_mireds(self):
         """Return the warmest color_temp that this light supports."""
         return 333
-
-    @property
-    def supported_features(self):
-        """Return the supported features."""
-        return SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP
 
     async def async_turn_on(self, **kwargs):
         """Turn the light on."""
@@ -789,6 +783,8 @@ class XiaomiPhilipsEyecareLampAmbientLight(XiaomiPhilipsAbstractLight):
 class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
     """Representation of a Xiaomi Philips Zhirui Bedside Lamp."""
 
+    _attr_supported_color_modes = {ColorMode.COLOR_TEMP, ColorMode.HS}
+
     def __init__(self, name, light, model, unique_id):
         """Initialize the light device."""
         super().__init__(name, light, model, unique_id)
@@ -822,9 +818,11 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
         return self._hs_color
 
     @property
-    def supported_features(self):
-        """Return the supported features."""
-        return SUPPORT_BRIGHTNESS | SUPPORT_COLOR | SUPPORT_COLOR_TEMP
+    def color_mode(self):
+        """Return the color mode of the light."""
+        if self.hs_color:
+            return ColorMode.HS
+        return ColorMode.COLOR_TEMP
 
     async def async_turn_on(self, **kwargs):
         """Turn the light on."""
