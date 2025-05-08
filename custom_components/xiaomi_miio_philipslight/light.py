@@ -439,21 +439,21 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
         return self._color_temp
 
     @property
-    def min_mireds(self):
+    def min_color_temp_kelvin(self):
         """Return the coldest color_temp that this light supports."""
-        return 175
+        return 5700
 
     @property
-    def max_mireds(self):
+    def max_color_temp_kelvin(self):
         """Return the warmest color_temp that this light supports."""
-        return 333
+        return 3000
 
     async def async_turn_on(self, **kwargs):
         """Turn the light on."""
         if ATTR_COLOR_TEMP_KELVIN in kwargs:
             color_temp = kwargs[ATTR_COLOR_TEMP_KELVIN]
             percent_color_temp = self.translate(
-                color_temp, self.max_mireds, self.min_mireds, CCT_MIN, CCT_MAX
+                color_temp, self.max_color_temp_kelvin, self.min_color_temp_kelvin, CCT_MIN, CCT_MAX
             )
 
         if ATTR_BRIGHTNESS in kwargs:
