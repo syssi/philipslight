@@ -10,7 +10,7 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
-    ATTR_COLOR_TEMP,
+    ATTR_COLOR_TEMP_KELVIN,
     ATTR_HS_COLOR,
     PLATFORM_SCHEMA,
     ColorMode,
@@ -450,8 +450,8 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
 
     async def async_turn_on(self, **kwargs):
         """Turn the light on."""
-        if ATTR_COLOR_TEMP in kwargs:
-            color_temp = kwargs[ATTR_COLOR_TEMP]
+        if ATTR_COLOR_TEMP_KELVIN in kwargs:
+            color_temp = kwargs[ATTR_COLOR_TEMP_KELVIN]
             percent_color_temp = self.translate(
                 color_temp, self.max_mireds, self.min_mireds, CCT_MIN, CCT_MAX
             )
