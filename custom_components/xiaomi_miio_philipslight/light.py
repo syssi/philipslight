@@ -581,7 +581,7 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsBulb):
     @property
     def max_color_temp_kelvin(self):
         """Return the warmest color_temp that this light supports."""
-        return 5700
+        return 3000
 
     async def async_update(self):
         """Fetch state from the device."""
