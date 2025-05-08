@@ -576,7 +576,7 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsBulb):
     @property
     def min_color_temp_kelvin(self):
         """Return the coldest color_temp that this light supports."""
-        return 3000
+        return 5700
 
     @property
     def max_color_temp_kelvin(self):
