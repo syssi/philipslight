@@ -1,4 +1,5 @@
 """Support for Xiaomi Philips Lights."""
+
 import asyncio
 import datetime
 import logging
@@ -453,7 +454,11 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
         if ATTR_COLOR_TEMP_KELVIN in kwargs:
             color_temp = kwargs[ATTR_COLOR_TEMP_KELVIN]
             percent_color_temp = self.translate(
-                color_temp, self.max_color_temp_kelvin, self.min_color_temp_kelvin, CCT_MIN, CCT_MAX
+                color_temp,
+                self.max_color_temp_kelvin,
+                self.min_color_temp_kelvin,
+                CCT_MIN,
+                CCT_MAX,
             )
 
         if ATTR_BRIGHTNESS in kwargs:
@@ -531,7 +536,11 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
         self._state = state.is_on
         self._brightness = ceil((255 / 100.0) * state.brightness)
         self._color_temp = self.translate(
-            state.color_temperature, CCT_MIN, CCT_MAX, self.max_color_temp_kelvin, self.min_color_temp_kelvin
+            state.color_temperature,
+            CCT_MIN,
+            CCT_MAX,
+            self.max_color_temp_kelvin,
+            self.min_color_temp_kelvin,
         )
 
         delayed_turn_off = self.delayed_turn_off_timestamp(
@@ -590,7 +599,11 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsBulb):
         self._state = state.is_on
         self._brightness = ceil((255 / 100.0) * state.brightness)
         self._color_temp = self.translate(
-            state.color_temperature, CCT_MIN, CCT_MAX, self.max_color_temp_kelvin, self.min_color_temp_kelvin
+            state.color_temperature,
+            CCT_MIN,
+            CCT_MAX,
+            self.max_color_temp_kelvin,
+            self.min_color_temp_kelvin,
         )
 
         delayed_turn_off = self.delayed_turn_off_timestamp(
@@ -829,7 +842,11 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
         if ATTR_COLOR_TEMP in kwargs:
             color_temp = kwargs[ATTR_COLOR_TEMP]
             percent_color_temp = self.translate(
-                color_temp, self.max_color_temp_kelvin, self.min_color_temp_kelvin, CCT_MIN, CCT_MAX
+                color_temp,
+                self.max_color_temp_kelvin,
+                self.min_color_temp_kelvin,
+                CCT_MIN,
+                CCT_MAX,
             )
 
         if ATTR_BRIGHTNESS in kwargs:
@@ -948,7 +965,11 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
         self._state = state.is_on
         self._brightness = ceil((255 / 100.0) * state.brightness)
         self._color_temp = self.translate(
-            state.color_temperature, CCT_MIN, CCT_MAX, self.max_color_temp_kelvin, self.min_color_temp_kelvin
+            state.color_temperature,
+            CCT_MIN,
+            CCT_MAX,
+            self.max_color_temp_kelvin,
+            self.min_color_temp_kelvin,
         )
         self._hs_color = color.color_RGB_to_hs(*state.rgb)
 
