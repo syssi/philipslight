@@ -465,7 +465,7 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
             brightness = kwargs[ATTR_BRIGHTNESS]
             percent_brightness = ceil(100 * brightness / 255.0)
 
-        if ATTR_BRIGHTNESS in kwargs and ATTR_COLOR_TEMP in kwargs:
+        if ATTR_BRIGHTNESS in kwargs and ATTR_COLOR_TEMP_KELVIN in kwargs:
             _LOGGER.debug(
                 "Setting brightness and color temperature: "
                 "%s %s%%, %s kelvin, %s%% cct",
@@ -486,7 +486,7 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
                 self._color_temp = color_temp
                 self._brightness = brightness
 
-        elif ATTR_COLOR_TEMP in kwargs:
+        elif ATTR_COLOR_TEMP_KELVIN in kwargs:
             _LOGGER.debug(
                 "Setting color temperature: %s kelvin, %s%% cct",
                 color_temp,
@@ -839,8 +839,8 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
 
     async def async_turn_on(self, **kwargs):
         """Turn the light on."""
-        if ATTR_COLOR_TEMP in kwargs:
-            color_temp = kwargs[ATTR_COLOR_TEMP]
+        if ATTR_COLOR_TEMP_KELVIN in kwargs:
+            color_temp = kwargs[ATTR_COLOR_TEMP_KELVIN]
             percent_color_temp = self.translate(
                 color_temp,
                 self.max_color_temp_kelvin,
@@ -876,7 +876,7 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
                 self._hs_color = hs_color
                 self._brightness = brightness
 
-        elif ATTR_BRIGHTNESS in kwargs and ATTR_COLOR_TEMP in kwargs:
+        elif ATTR_BRIGHTNESS in kwargs and ATTR_COLOR_TEMP_KELVIN in kwargs:
             _LOGGER.debug(
                 "Setting brightness and color temperature: "
                 "%s %s%%, %s kelvin, %s%% cct",
@@ -907,7 +907,7 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
             if result:
                 self._hs_color = hs_color
 
-        elif ATTR_COLOR_TEMP in kwargs:
+        elif ATTR_COLOR_TEMP_KELVIN in kwargs:
             _LOGGER.debug(
                 "Setting color temperature: %s kelvin, %s%% cct",
                 color_temp,
