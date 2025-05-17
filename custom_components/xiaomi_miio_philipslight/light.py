@@ -17,7 +17,7 @@ from homeassistant.components.light import (
     ColorMode,
     LightEntity,
 )
-from homeassistant.const import ATTR_ENTITY_ID, CONF_HOST, CONF_NAME, CONF_TOKEN
+from homeassistant.const import ATTR_ENTITY_ID, CONF_HOST, CONF_NAME, CONF_TOKEN, CONF_UNIQUE_ID
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.util import color, dt
 from miio import (
@@ -58,6 +58,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
                 "philips.light.hbulb",
             ]
         ),
+        vol.Optional(CONF_UNIQUE_ID, default=None): cv.string,
     }
 )
 
@@ -135,7 +136,10 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     _LOGGER.info("Initializing with host %s (token %s...)", host, token[:5])
 
     devices = []
-    unique_id = None
+    if CONF_UNIQUE_ID not in config:
+        unique_id = None
+    else:
+        unique_id = config[CONF_UNIQUE_ID]
 
     if model is None:
         try:
