@@ -17,7 +17,8 @@ from homeassistant.components.light import (
     ColorMode,
     LightEntity,
 )
-from homeassistant.const import ATTR_ENTITY_ID, CONF_HOST, CONF_NAME, CONF_TOKEN, CONF_UNIQUE_ID
+from homeassistant.const import (ATTR_ENTITY_ID, CONF_HOST, CONF_NAME,
+                                 CONF_TOKEN, CONF_UNIQUE_ID)
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.util import color, dt
 from miio import (
