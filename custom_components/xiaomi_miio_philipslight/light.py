@@ -938,7 +938,6 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
                     self._name
                 )
 
-                # Activate scene 6
                 result = await self._try_command(
                     "Setting scene 6 failed",
                     self._light.set_scene,
