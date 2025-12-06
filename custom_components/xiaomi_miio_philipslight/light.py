@@ -37,6 +37,7 @@ DATA_KEY = "light.xiaomi_miio_philipslight"
 DOMAIN = "xiaomi_miio_philipslight"
 
 CONF_MODEL = "model"
+CONF_AUTO_MIDNIGHT_MODE = "auto_midnight_mode"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -58,6 +59,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
                 "philips.light.hbulb",
             ]
         ),
+        vol.Optional(CONF_AUTO_MIDNIGHT_MODE, default=True): cv.boolean,
     }
 )
 
@@ -131,6 +133,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     token = config[CONF_TOKEN]
     name = config[CONF_NAME]
     model = config.get(CONF_MODEL)
+    auto_midnight_mode = config.get(CONF_AUTO_MIDNIGHT_MODE, True)
 
     _LOGGER.info("Initializing with host %s (token %s...)", host, token[:5])
 
@@ -171,7 +174,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         hass.data[DATA_KEY][host] = device
     elif model == "philips.light.moonlight":
         light = PhilipsMoonlight(host, token)
-        device = XiaomiPhilipsMoonlightLamp(name, light, model, unique_id)
+        device = XiaomiPhilipsMoonlightLamp(name, light, model, unique_id, auto_midnight_mode)
         devices.append(device)
         hass.data[DATA_KEY][host] = device
     elif model in [
@@ -798,12 +801,13 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
 
     _attr_supported_color_modes = {ColorMode.COLOR_TEMP, ColorMode.HS}
 
-    def __init__(self, name, light, model, unique_id):
+    def __init__(self, name, light, model, unique_id, auto_midnight_mode=True):
         """Initialize the light device."""
         super().__init__(name, light, model, unique_id)
 
         self._music_mode = False
         self._hs_color = None
+        self._auto_midnight_mode = auto_midnight_mode
         self._state_attrs.pop(ATTR_DELAYED_TURN_OFF)
         self._state_attrs.update(
             {
@@ -928,7 +932,7 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
             percent_brightness = ceil(100 * brightness / 255.0)
 
             # === Auto-activate Scene 6 (Midnight Mode) when brightness is 1-3% ===
-            if percent_brightness >= 1 and percent_brightness <= 3:
+            if self._auto_midnight_mode and percent_brightness >= 1 and percent_brightness <= 3:
                 _LOGGER.info(
                     "Brightness set to %s%% for %s, automatically activating scene 6 (midnight mode)",
                     percent_brightness,
