@@ -927,6 +927,30 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
             brightness = kwargs[ATTR_BRIGHTNESS]
             percent_brightness = ceil(100 * brightness / 255.0)
 
+            # === Auto-activate Scene 6 (Midnight Mode) when brightness is 1-3% ===
+            if percent_brightness >= 1 and percent_brightness <= 3:
+                _LOGGER.info(
+                    "Brightness set to %s%% for %s, automatically activating scene 6 (midnight mode)",
+                    percent_brightness,
+                    self._name
+                )
+
+                # Activate scene 6
+                result = await self._try_command(
+                    "Setting scene 6 failed",
+                    self._light.set_scene,
+                    6
+                )
+
+                if result:
+                    self._state = True
+                    self._brightness = brightness
+                    self._scene = 6
+                    return  # Exit without calling set_brightness
+                else:
+                    _LOGGER.error("Failed to set scene 6 for %s, falling back to brightness", self._name)
+            # === End of custom modification ===
+
             _LOGGER.debug("Setting brightness: %s %s%%", brightness, percent_brightness)
 
             result = await self._try_command(
