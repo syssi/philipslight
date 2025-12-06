@@ -931,7 +931,6 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
             brightness = kwargs[ATTR_BRIGHTNESS]
             percent_brightness = ceil(100 * brightness / 255.0)
 
-            # === Auto-activate Scene 6 (Midnight Mode) when brightness is 1-3% ===
             if self._auto_midnight_mode and percent_brightness >= 1 and percent_brightness <= 3:
                 _LOGGER.info(
                     "Brightness set to %s%% for %s, automatically activating scene 6 (midnight mode)",
