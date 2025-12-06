@@ -953,7 +953,6 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
                     return  # Exit without calling set_brightness
                 else:
                     _LOGGER.error("Failed to set scene 6 for %s, falling back to brightness", self._name)
-            # === End of custom modification ===
 
             _LOGGER.debug("Setting brightness: %s %s%%", brightness, percent_brightness)
 
