@@ -174,7 +174,9 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         hass.data[DATA_KEY][host] = device
     elif model == "philips.light.moonlight":
         light = PhilipsMoonlight(host, token)
-        device = XiaomiPhilipsMoonlightLamp(name, light, model, unique_id, auto_midnight_mode)
+        device = XiaomiPhilipsMoonlightLamp(
+            name, light, model, unique_id, auto_midnight_mode
+        )
         devices.append(device)
         hass.data[DATA_KEY][host] = device
     elif model in [
@@ -931,17 +933,19 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
             brightness = kwargs[ATTR_BRIGHTNESS]
             percent_brightness = ceil(100 * brightness / 255.0)
 
-            if self._auto_midnight_mode and percent_brightness >= 1 and percent_brightness <= 3:
+            if (
+                self._auto_midnight_mode
+                and percent_brightness >= 1
+                and percent_brightness <= 3
+            ):
                 _LOGGER.info(
                     "Brightness set to %s%% for %s, automatically activating scene 6 (midnight mode)",
                     percent_brightness,
-                    self._name
+                    self._name,
                 )
 
                 result = await self._try_command(
-                    "Setting scene 6 failed",
-                    self._light.set_scene,
-                    6
+                    "Setting scene 6 failed", self._light.set_scene, 6
                 )
 
                 if result:
@@ -950,7 +954,10 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
                     self._scene = 6
                     return
                 else:
-                    _LOGGER.error("Failed to set scene 6 for %s, falling back to brightness", self._name)
+                    _LOGGER.error(
+                        "Failed to set scene 6 for %s, falling back to brightness",
+                        self._name,
+                    )
 
             _LOGGER.debug("Setting brightness: %s %s%%", brightness, percent_brightness)
 
