@@ -133,7 +133,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     token = config[CONF_TOKEN]
     name = config[CONF_NAME]
     model = config.get(CONF_MODEL)
-    auto_midnight_mode = config.get(CONF_AUTO_MIDNIGHT_MODE, True)
+    auto_midnight_mode = config.get(CONF_AUTO_MIDNIGHT_MODE)
 
     _LOGGER.info("Initializing with host %s (token %s...)", host, token[:5])
 
