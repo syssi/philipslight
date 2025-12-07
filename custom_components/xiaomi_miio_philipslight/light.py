@@ -801,7 +801,7 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
 
     _attr_supported_color_modes = {ColorMode.COLOR_TEMP, ColorMode.HS}
 
-    def __init__(self, name, light, model, unique_id, auto_midnight_mode=True):
+    def __init__(self, name, light, model, unique_id, auto_midnight_mode):
         """Initialize the light device."""
         super().__init__(name, light, model, unique_id)
 
