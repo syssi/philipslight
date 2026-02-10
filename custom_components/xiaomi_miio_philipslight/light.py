@@ -17,7 +17,7 @@ from homeassistant.components.light import (
     ColorMode,
     LightEntity,
 )
-from homeassistant.const import ATTR_ENTITY_ID, CONF_HOST, CONF_NAME, CONF_TOKEN
+from homeassistant.const import ATTR_ENTITY_ID, CONF_HOST, CONF_NAME, CONF_TOKEN, CONF_UNIQUE_ID
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.util import color, dt
 from miio import (
@@ -60,6 +60,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
             ]
         ),
         vol.Optional(CONF_AUTO_MIDNIGHT_MODE, default=True): cv.boolean,
+        vol.Optional(CONF_UNIQUE_ID): cv.string,
     }
 )
 
@@ -133,12 +134,12 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     token = config[CONF_TOKEN]
     name = config[CONF_NAME]
     model = config.get(CONF_MODEL)
+    unique_id = config[CONF_UNIQUE_ID]
     auto_midnight_mode = config.get(CONF_AUTO_MIDNIGHT_MODE)
 
     _LOGGER.info("Initializing with host %s (token %s...)", host, token[:5])
 
     devices = []
-    unique_id = None
 
     if model is None:
         try:

@@ -106,6 +106,7 @@ light:
     host: 192.168.130.67
     token: da548d86f55996413d82eea94279d2ff
     model: philips.light.bulb
+    unique_id: 12345
   - platform: xiaomi_miio_philipslight
     name: Xiaomi Philips Smart LED Ceiling Lamp
     host: 192.168.130.68
@@ -123,6 +124,7 @@ Configuration variables:
 - **token** (*Required*): The API token of your light.
 - **name** (*Optional*): The name of your light.
 - **model** (*Optional*): The model of your light. Valid values are `philips.light.sread1`, `philips.light.ceiling`, `philips.light.zyceiling`, `philips.light.moonlight`, `philips.light.bulb`, `philips.light.candle`, `philips.light.candle2`, `philips.light.mono1` and `philips.light.downlight`. This setting can be used to bypass the device model detection and is recommended if your device isn't always available.
+- **unique_id** (*Optional*): Unique ID of your device. It probably can be set to any reasonable value - such as serial number or mac address. Used to create device from entity in the UI. Without the ID one cannot do that.
 
 ## Debugging
 
