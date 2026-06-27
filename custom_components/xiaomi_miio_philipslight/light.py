@@ -571,12 +571,11 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsBulb):
     """Representation of a Xiaomi Philips Ceiling Lamp."""
 
     def __init__(self, name, light, model, unique_id):
-    """Initialize the light device."""
-    super().__init__(name, light, model, unique_id)
-
-    self._state_attrs.update(
-        {ATTR_NIGHT_LIGHT_MODE: None, ATTR_AUTOMATIC_COLOR_TEMPERATURE: None}
-    )
+        """Initialize the light device."""
+        super().__init__(name, light, model, unique_id)
+        self._state_attrs.update(
+            {ATTR_NIGHT_LIGHT_MODE: None, ATTR_AUTOMATIC_COLOR_TEMPERATURE: None}
+        )
 
     @property
     def min_color_temp_kelvin(self):
@@ -643,7 +642,116 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsBulb):
             )
             if result:
                 self._brightness = brightness
+        else:
+            await self._try_command("Turning the light on failed.", self._light.on)
     
+    async def async_update(self):
+        """Fetch state from the device."""
+        try:
+            state = await self.hass.async_add_executor_job(self._light.status)
+        except DeviceException as ex:
+            if self._available:
+                self._available = False
+                _LOGGER.error("Got exception while fetching the state: %s", ex)
+            return
+    
+        _LOGGER.debug("Got new state: %s", state)
+        self._available = True
+        self._state = state.is_on
+        self._brightness = ceil((255 / 100.0) * state.brightness)
+        
+        # Convert device's color temp percentage back to Kelvin
+        if state.color_temperature is not None:
+            self._color_temp = self.translate(
+                state.color_temperature,
+                CCT_MIN,
+                CCT_MAX,
+                self.min_color_temp_kelvin,
+                self.max_color_temp_kelvin,
+            )
+            self._hs_color = None  # Clear HS color when using color temp
+        else:
+            self._color_temp = None
+    
+        # Update additional state attributes
+        self._state_attrs.update({
+            ATTR_SCENE: state.scene,
+            ATTR_NIGHT_LIGHT_MODE: state.smart_night_light,
+            ATTR_AUTOMATIC_COLOR_TEMPERATURE: state.automatic_color_temperature,
+        })
+
+    def __init__(self, name, light, model, unique_id):
+        """Initialize the light device."""
+        super().__init__(name, light, model, unique_id)
+        self._state_attrs.update(
+            {ATTR_NIGHT_LIGHT_MODE: None, ATTR_AUTOMATIC_COLOR_TEMPERATURE: None}
+        )
+
+    @property
+    def min_color_temp_kelvin(self):
+        """Return the coldest color_temp that this light supports."""
+        return 2700  # Corrected from 3000 to match actual hardware capabilities
+    
+    @property
+    def max_color_temp_kelvin(self):
+        """Return the warmest color_temp that this light supports."""
+        return 6500  # Corrected from 5700 to match actual hardware capabilities
+    
+    async def async_turn_on(self, **kwargs):
+        """Turn the light on."""
+        if ATTR_COLOR_TEMP_KELVIN in kwargs:
+            color_temp = kwargs[ATTR_COLOR_TEMP_KELVIN]
+            # Clamp to supported range
+            color_temp = max(self.min_color_temp_kelvin, min(color_temp, self.max_color_temp_kelvin))
+            # Map from Kelvin to device's percentage range (1-100)
+            percent_color_temp = self.translate(
+                color_temp,
+                self.min_color_temp_kelvin,
+                self.max_color_temp_kelvin,
+                CCT_MIN,
+                CCT_MAX,
+            )
+    
+            _LOGGER.debug(
+                "Setting color temperature: %s K -> %s%%",
+                color_temp,
+                percent_color_temp,
+            )
+    
+        if ATTR_BRIGHTNESS in kwargs:
+            brightness = kwargs[ATTR_BRIGHTNESS]
+            percent_brightness = ceil(100 * brightness / 255.0)
+    
+        if ATTR_BRIGHTNESS in kwargs and ATTR_COLOR_TEMP_KELVIN in kwargs:
+            result = await self._try_command(
+                "Setting brightness and color temperature failed: %s",
+                self._light.set_brightness_and_color_temperature,
+                percent_brightness,
+                percent_color_temp,
+            )
+            if result:
+                self._brightness = brightness
+                self._color_temp = color_temp
+                self._hs_color = None  # Clear HS color when using color temp
+    
+        elif ATTR_COLOR_TEMP_KELVIN in kwargs:
+            result = await self._try_command(
+                "Setting color temperature failed: %s",
+                self._light.set_color_temperature,
+                percent_color_temp,
+            )
+            if result:
+                self._color_temp = color_temp
+                self._hs_color = None  # Clear HS color when using color temp
+    
+        elif ATTR_BRIGHTNESS in kwargs:
+            result = await self._try_command(
+                "Setting brightness failed: %s",
+                self._light.set_brightness,
+                percent_brightness,
+            )
+            if result:
+                self._brightness = brightness
         else:
             await self._try_command("Turning the light on failed.", self._light.on)
     
@@ -681,7 +789,6 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsBulb):
             ATTR_NIGHT_LIGHT_MODE: state.smart_night_light,
             ATTR_AUTOMATIC_COLOR_TEMPERATURE: state.automatic_color_temperature,
         })`
-
 
 class XiaomiPhilipsEyecareLamp(XiaomiPhilipsGenericLight):
     """Representation of a Xiaomi Philips Eyecare Lamp 2."""
