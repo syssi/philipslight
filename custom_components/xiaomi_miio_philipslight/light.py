@@ -66,6 +66,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 # The light does not accept cct values < 1
 CCT_MIN = 1
 CCT_MAX = 100
+COLOR_TEMP_PENDING_TIMEOUT_SECONDS = 60
+COLOR_TEMP_CONFIRM_TOLERANCE_CCT = 1
 
 DELAYED_TURN_OFF_MAX_DEVIATION_SECONDS = 4
 DELAYED_TURN_OFF_MAX_DEVIATION_MINUTES = 1
@@ -438,32 +440,112 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
         super().__init__(name, light, model, unique_id)
 
         self._color_temp = None
+        self._pending_color_temp = None
+        self._pending_color_temp_cct = None
+        self._pending_color_temp_set_at = None
+        self._pending_color_temp_token = 0
+        self._color_temp_command_token = 0
+        self._color_temp_command_lock = asyncio.Lock()
 
     @property
     def color_temp(self):
-        """Return the color temperature."""
+        """Return the color temperature with fallback."""
+        if self._color_temp is None:
+            return int((self.max_color_temp_kelvin + self.min_color_temp_kelvin) / 2)
+        return self._color_temp
+
+    @property
+    def color_temp_kelvin(self):
+        """Return the color temperature in Kelvin with fallback."""
+        if self._color_temp is None:
+            return int((self.max_color_temp_kelvin + self.min_color_temp_kelvin) / 2)
         return self._color_temp
 
     @property
     def min_color_temp_kelvin(self):
-        """Return the coldest color_temp that this light supports."""
-        return 5700
+        """Return the warmest color_temp that this light supports."""
+        return 3000
 
     @property
     def max_color_temp_kelvin(self):
-        """Return the warmest color_temp that this light supports."""
-        return 3000
+        """Return the coldest color_temp that this light supports."""
+        return 5700
+
+    def _set_pending_color_temp(self, color_temp, color_temp_cct):
+        """Optimistically keep color temperature while the device catches up."""
+        self._color_temp_command_token += 1
+        token = self._color_temp_command_token
+        self._color_temp = color_temp
+        self._pending_color_temp = color_temp
+        self._pending_color_temp_cct = color_temp_cct
+        self._pending_color_temp_set_at = dt.utcnow()
+        self._pending_color_temp_token = token
+        self.async_write_ha_state()
+        return token
+
+    def _clear_pending_color_temp(self, token=None):
+        """Clear pending color temperature transition."""
+        if token is not None and token != self._pending_color_temp_token:
+            return
+        self._pending_color_temp = None
+        self._pending_color_temp_cct = None
+        self._pending_color_temp_set_at = None
+        self._pending_color_temp_token = 0
+
+    async def _try_color_temp_command(self, token, mask_error, func, *args):
+        """Run only the latest color temperature command."""
+        async with self._color_temp_command_lock:
+            if token != self._pending_color_temp_token:
+                _LOGGER.debug("Skipping outdated color temperature command")
+                return None
+            return await self._try_command(mask_error, func, *args)
+
+    def _update_color_temp_from_state(self, raw_color_temp):
+        """Update color temperature, ignoring stale status during transitions."""
+        new_color_temp = self.translate(
+            raw_color_temp,
+            CCT_MIN,
+            CCT_MAX,
+            self.min_color_temp_kelvin,
+            self.max_color_temp_kelvin,
+        )
+
+        if (
+            self._pending_color_temp is not None
+            and self._pending_color_temp_set_at is not None
+        ):
+            age = (dt.utcnow() - self._pending_color_temp_set_at).total_seconds()
+
+            if (
+                self._pending_color_temp_cct is not None
+                and abs(raw_color_temp - self._pending_color_temp_cct) <= COLOR_TEMP_CONFIRM_TOLERANCE_CCT
+            ):
+                self._color_temp = self._pending_color_temp
+                self._clear_pending_color_temp()
+                return
+
+            if age < COLOR_TEMP_PENDING_TIMEOUT_SECONDS:
+                self._color_temp = self._pending_color_temp
+                return
+
+            _LOGGER.debug(
+                "Color temperature pending timeout expired. Accepting device state: %s",
+                new_color_temp,
+            )
+            self._clear_pending_color_temp()
+
+        self._color_temp = new_color_temp
 
     async def async_turn_on(self, **kwargs):
         """Turn the light on."""
         if ATTR_COLOR_TEMP_KELVIN in kwargs:
             color_temp = kwargs[ATTR_COLOR_TEMP_KELVIN]
             percent_color_temp = self.translate(
-                color_temp,
-                self.max_color_temp_kelvin,
-                self.min_color_temp_kelvin,
-                CCT_MIN,
-                CCT_MAX,
+                color_temp,                    # Твой выбор: 5700K
+                self.min_color_temp_kelvin,    # 3000
+                self.max_color_temp_kelvin,    # 5700
+                CCT_MIN,                       # 1
+                CCT_MAX,                       # 100
             )
 
         if ATTR_BRIGHTNESS in kwargs:
@@ -480,7 +562,10 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
                 percent_color_temp,
             )
 
-            result = await self._try_command(
+            token = self._set_pending_color_temp(color_temp, percent_color_temp)
+
+            result = await self._try_color_temp_command(
+                token,
                 "Setting brightness and color temperature failed: %s bri, %s cct",
                 self._light.set_brightness_and_color_temperature,
                 percent_brightness,
@@ -488,8 +573,10 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
             )
 
             if result:
-                self._color_temp = color_temp
                 self._brightness = brightness
+            elif result is False:
+                self._clear_pending_color_temp(token)
+                _LOGGER.debug("Color temperature command failed. Waiting for next device state update.")
 
         elif ATTR_COLOR_TEMP_KELVIN in kwargs:
             _LOGGER.debug(
@@ -498,14 +585,18 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
                 percent_color_temp,
             )
 
-            result = await self._try_command(
+            token = self._set_pending_color_temp(color_temp, percent_color_temp)
+
+            result = await self._try_color_temp_command(
+                token,
                 "Setting color temperature failed: %s cct",
                 self._light.set_color_temperature,
                 percent_color_temp,
             )
 
-            if result:
-                self._color_temp = color_temp
+            if result is False:
+                self._clear_pending_color_temp(token)
+                _LOGGER.debug("Color temperature command failed. Waiting for next device state update.")
 
         elif ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs[ATTR_BRIGHTNESS]
@@ -540,13 +631,7 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
         self._available = True
         self._state = state.is_on
         self._brightness = ceil((255 / 100.0) * state.brightness)
-        self._color_temp = self.translate(
-            state.color_temperature,
-            CCT_MIN,
-            CCT_MAX,
-            self.max_color_temp_kelvin,
-            self.min_color_temp_kelvin,
-        )
+        self._update_color_temp_from_state(state.color_temperature)
 
         delayed_turn_off = self.delayed_turn_off_timestamp(
             state.delay_off_countdown,
@@ -580,13 +665,13 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsBulb):
 
     @property
     def min_color_temp_kelvin(self):
-        """Return the coldest color_temp that this light supports."""
-        return 5700
+        """Return the warmest color_temp that this light supports."""
+        return 3000
 
     @property
     def max_color_temp_kelvin(self):
-        """Return the warmest color_temp that this light supports."""
-        return 3000
+        """Return the coldest color_temp that this light supports."""
+        return 5700
 
     async def async_update(self):
         """Fetch state from the device."""
@@ -603,13 +688,7 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsBulb):
         self._available = True
         self._state = state.is_on
         self._brightness = ceil((255 / 100.0) * state.brightness)
-        self._color_temp = self.translate(
-            state.color_temperature,
-            CCT_MIN,
-            CCT_MAX,
-            self.max_color_temp_kelvin,
-            self.min_color_temp_kelvin,
-        )
+        self._update_color_temp_from_state(state.color_temperature)
 
         delayed_turn_off = self.delayed_turn_off_timestamp(
             state.delay_off_countdown,
@@ -823,13 +902,13 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
 
     @property
     def min_color_temp_kelvin(self):
-        """Return the coldest color_temp that this light supports."""
-        return 6600
+        """Return the warmest color_temp that this light supports."""
+        return 1700
 
     @property
     def max_color_temp_kelvin(self):
-        """Return the warmest color_temp that this light supports."""
-        return 1700
+        """Return the coldest color_temp that this light supports."""
+        return 6600
 
     @property
     def hs_color(self) -> tuple:
@@ -849,10 +928,10 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
             color_temp = kwargs[ATTR_COLOR_TEMP_KELVIN]
             percent_color_temp = self.translate(
                 color_temp,
-                self.max_color_temp_kelvin,
-                self.min_color_temp_kelvin,
-                CCT_MIN,
-                CCT_MAX,
+                self.min_color_temp_kelvin,  # 1700
+                self.max_color_temp_kelvin,  # 6600
+                CCT_MIN,                     # 1
+                CCT_MAX,                     # 100
             )
 
         if ATTR_BRIGHTNESS in kwargs:
@@ -892,7 +971,10 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
                 percent_color_temp,
             )
 
-            result = await self._try_command(
+            token = self._set_pending_color_temp(color_temp, percent_color_temp)
+
+            result = await self._try_color_temp_command(
+                token,
                 "Setting brightness and color temperature failed: %s bri, %s cct",
                 self._light.set_brightness_and_color_temperature,
                 percent_brightness,
@@ -900,8 +982,10 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
             )
 
             if result:
-                self._color_temp = color_temp
                 self._brightness = brightness
+            elif result is False:
+                self._clear_pending_color_temp(token)
+                _LOGGER.debug("Color temperature command failed. Waiting for next device state update.")
 
         elif ATTR_HS_COLOR in kwargs:
             _LOGGER.debug("Setting color: %s", rgb)
@@ -920,14 +1004,18 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
                 percent_color_temp,
             )
 
-            result = await self._try_command(
+            token = self._set_pending_color_temp(color_temp, percent_color_temp)
+
+            result = await self._try_color_temp_command(
+                token,
                 "Setting color temperature failed: %s cct",
                 self._light.set_color_temperature,
                 percent_color_temp,
             )
 
-            if result:
-                self._color_temp = color_temp
+            if result is False:
+                self._clear_pending_color_temp(token)
+                _LOGGER.debug("Color temperature command failed. Waiting for next device state update.")
 
         elif ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs[ATTR_BRIGHTNESS]
@@ -996,13 +1084,8 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
         self._available = True
         self._state = state.is_on
         self._brightness = ceil((255 / 100.0) * state.brightness)
-        self._color_temp = self.translate(
-            state.color_temperature,
-            CCT_MIN,
-            CCT_MAX,
-            self.max_color_temp_kelvin,
-            self.min_color_temp_kelvin,
-        )
+        self._update_color_temp_from_state(state.color_temperature)
+
         self._hs_color = color.color_RGB_to_hs(*state.rgb)
 
         self._state_attrs.update(
