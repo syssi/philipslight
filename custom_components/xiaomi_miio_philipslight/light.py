@@ -66,6 +66,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 # The light does not accept cct values < 1
 CCT_MIN = 1
 CCT_MAX = 100
+COLOR_TEMP_PENDING_TIMEOUT_SECONDS = 60
+COLOR_TEMP_CONFIRM_TOLERANCE_CCT = 1
 
 DELAYED_TURN_OFF_MAX_DEVIATION_SECONDS = 4
 DELAYED_TURN_OFF_MAX_DEVIATION_MINUTES = 1
@@ -123,11 +125,35 @@ SERVICE_TO_METHOD = {
     SERVICE_EYECARE_MODE_OFF: {"method": "async_eyecare_mode_off"},
 }
 
+# Which miio wrapper class talks to the device over the network.
+MODEL_TO_DEVICE_CLASS = {
+    "philips.light.sread1": PhilipsEyecare,
+    "philips.light.sread2": PhilipsEyecare,
+    "philips.light.ceiling": Ceil,
+    "philips.light.zyceiling": Ceil,
+    "philips.light.moonlight": PhilipsMoonlight,
+    "philips.light.bulb": PhilipsBulb,
+    "philips.light.candle": PhilipsBulb,
+    "philips.light.candle2": PhilipsBulb,
+    "philips.light.downlight": PhilipsBulb,
+    "philips.light.mono1": PhilipsBulb,
+    "philips.light.hbulb": PhilipsBulb,
+}
+
+EYECARE_MODELS = {"philips.light.sread1", "philips.light.sread2"}
+CEILING_MODELS = {"philips.light.ceiling", "philips.light.zyceiling"}
+BULB_MODELS = {
+    "philips.light.bulb",
+    "philips.light.candle",
+    "philips.light.candle2",
+    "philips.light.downlight",
+}
+GENERIC_MODELS = {"philips.light.mono1", "philips.light.hbulb"}
+
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the light from config."""
-    if DATA_KEY not in hass.data:
-        hass.data[DATA_KEY] = {}
+    hass.data.setdefault(DATA_KEY, {})
 
     host = config[CONF_HOST]
     token = config[CONF_TOKEN]
@@ -137,26 +163,38 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     _LOGGER.info("Initializing with host %s (token %s...)", host, token[:5])
 
-    devices = []
-    unique_id = None
+    # Always fetch device info: needed for unique_id (even when the model is
+    # set explicitly in the config), and for model auto-detection otherwise.
+    try:
+        miio_device = Device(host, token)
+        device_info = await hass.async_add_executor_job(miio_device.info)
+    except DeviceException as ex:
+        raise PlatformNotReady from ex
 
     if model is None:
-        try:
-            miio_device = Device(host, token)
-            device_info = await hass.async_add_executor_job(miio_device.info)
-            model = device_info.model
-            unique_id = f"{model}-{device_info.mac_address}"
-            _LOGGER.info(
-                "%s %s %s detected",
-                model,
-                device_info.firmware_version,
-                device_info.hardware_version,
-            )
-        except DeviceException as ex:
-            raise PlatformNotReady from ex
+        model = device_info.model
+        _LOGGER.info(
+            "%s %s %s detected",
+            model,
+            device_info.firmware_version,
+            device_info.hardware_version,
+        )
 
-    if model in ["philips.light.sread1", "philips.light.sread2"]:
-        light = PhilipsEyecare(host, token)
+    unique_id = f"{model}-{device_info.mac_address}"
+
+    if model not in MODEL_TO_DEVICE_CLASS:
+        _LOGGER.error(
+            "Unsupported device found! Please create an issue at "
+            "https://github.com/syssi/philipslight/issues "
+            "and provide the following data: %s",
+            model,
+        )
+        return False
+
+    light = MODEL_TO_DEVICE_CLASS[model](host, token)
+    devices = []
+
+    if model in EYECARE_MODELS:
         primary_device = XiaomiPhilipsEyecareLamp(name, light, model, unique_id)
         devices.append(primary_device)
         hass.data[DATA_KEY][host] = primary_device
@@ -167,46 +205,34 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         devices.append(secondary_device)
         # The ambient light doesn't expose additional services.
         # A hass.data[DATA_KEY] entry isn't needed.
-    elif model in ["philips.light.ceiling", "philips.light.zyceiling"]:
-        light = Ceil(host, token)
+    elif model in CEILING_MODELS:
         device = XiaomiPhilipsCeilingLamp(name, light, model, unique_id)
         devices.append(device)
         hass.data[DATA_KEY][host] = device
     elif model == "philips.light.moonlight":
-        light = PhilipsMoonlight(host, token)
         device = XiaomiPhilipsMoonlightLamp(
             name, light, model, unique_id, auto_midnight_mode
         )
         devices.append(device)
         hass.data[DATA_KEY][host] = device
-    elif model in [
-        "philips.light.bulb",
-        "philips.light.candle",
-        "philips.light.candle2",
-        "philips.light.downlight",
-    ]:
-        light = PhilipsBulb(host, token)
+    elif model in BULB_MODELS:
         device = XiaomiPhilipsBulb(name, light, model, unique_id)
         devices.append(device)
         hass.data[DATA_KEY][host] = device
-    elif model in [
-        "philips.light.mono1",
-        "philips.light.hbulb",
-    ]:
-        light = PhilipsBulb(host, token)
+    elif model in GENERIC_MODELS:
         device = XiaomiPhilipsGenericLight(name, light, model, unique_id)
         devices.append(device)
         hass.data[DATA_KEY][host] = device
-    else:
-        _LOGGER.error(
-            "Unsupported device found! Please create an issue at "
-            "https://github.com/syssi/philipslight/issues "
-            "and provide the following data: %s",
-            model,
-        )
-        return False
 
     async_add_entities(devices, update_before_add=True)
+
+    _async_register_services(hass)
+
+
+def _async_register_services(hass):
+    """Register domain services (idempotent across multiple platform entries)."""
+    if hass.services.has_service(DOMAIN, SERVICE_SET_SCENE):
+        return
 
     async def async_service_handler(service):
         """Map services to methods on Xiaomi Philips Lights."""
@@ -438,21 +464,101 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
         super().__init__(name, light, model, unique_id)
 
         self._color_temp = None
+        self._pending_color_temp = None
+        self._pending_color_temp_cct = None
+        self._pending_color_temp_set_at = None
+        self._pending_color_temp_token = 0
+        self._color_temp_command_token = 0
+        self._color_temp_command_lock = asyncio.Lock()
 
     @property
     def color_temp(self):
-        """Return the color temperature."""
+        """Return the color temperature with fallback."""
+        if self._color_temp is None:
+            return int((self.max_color_temp_kelvin + self.min_color_temp_kelvin) / 2)
+        return self._color_temp
+
+    @property
+    def color_temp_kelvin(self):
+        """Return the color temperature in Kelvin with fallback."""
+        if self._color_temp is None:
+            return int((self.max_color_temp_kelvin + self.min_color_temp_kelvin) / 2)
         return self._color_temp
 
     @property
     def min_color_temp_kelvin(self):
-        """Return the coldest color_temp that this light supports."""
-        return 5700
+        """Return the warmest color_temp that this light supports."""
+        return 3000
 
     @property
     def max_color_temp_kelvin(self):
-        """Return the warmest color_temp that this light supports."""
-        return 3000
+        """Return the coldest color_temp that this light supports."""
+        return 5700
+
+    def _set_pending_color_temp(self, color_temp, color_temp_cct):
+        """Optimistically keep color temperature while the device catches up."""
+        self._color_temp_command_token += 1
+        token = self._color_temp_command_token
+        self._color_temp = color_temp
+        self._pending_color_temp = color_temp
+        self._pending_color_temp_cct = color_temp_cct
+        self._pending_color_temp_set_at = dt.utcnow()
+        self._pending_color_temp_token = token
+        self.async_write_ha_state()
+        return token
+
+    def _clear_pending_color_temp(self, token=None):
+        """Clear pending color temperature transition."""
+        if token is not None and token != self._pending_color_temp_token:
+            return
+        self._pending_color_temp = None
+        self._pending_color_temp_cct = None
+        self._pending_color_temp_set_at = None
+        self._pending_color_temp_token = 0
+
+    async def _try_color_temp_command(self, token, mask_error, func, *args):
+        """Run only the latest color temperature command."""
+        async with self._color_temp_command_lock:
+            if token != self._pending_color_temp_token:
+                _LOGGER.debug("Skipping outdated color temperature command")
+                return None
+            return await self._try_command(mask_error, func, *args)
+
+    def _update_color_temp_from_state(self, raw_color_temp):
+        """Update color temperature, ignoring stale status during transitions."""
+        new_color_temp = self.translate(
+            raw_color_temp,
+            CCT_MIN,
+            CCT_MAX,
+            self.min_color_temp_kelvin,
+            self.max_color_temp_kelvin,
+        )
+
+        if (
+            self._pending_color_temp is not None
+            and self._pending_color_temp_set_at is not None
+        ):
+            age = (dt.utcnow() - self._pending_color_temp_set_at).total_seconds()
+
+            if (
+                self._pending_color_temp_cct is not None
+                and abs(raw_color_temp - self._pending_color_temp_cct) <= COLOR_TEMP_CONFIRM_TOLERANCE_CCT
+            ):
+                self._color_temp = self._pending_color_temp
+                self._clear_pending_color_temp()
+                return
+
+            if age < COLOR_TEMP_PENDING_TIMEOUT_SECONDS:
+                self._color_temp = self._pending_color_temp
+                return
+
+            _LOGGER.debug(
+                "Color temperature pending timeout expired. Accepting device state: %s",
+                new_color_temp,
+            )
+            self._clear_pending_color_temp()
+
+        self._color_temp = new_color_temp
 
     async def async_turn_on(self, **kwargs):
         """Turn the light on."""
@@ -460,8 +566,8 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
             color_temp = kwargs[ATTR_COLOR_TEMP_KELVIN]
             percent_color_temp = self.translate(
                 color_temp,
-                self.max_color_temp_kelvin,
                 self.min_color_temp_kelvin,
+                self.max_color_temp_kelvin,
                 CCT_MIN,
                 CCT_MAX,
             )
@@ -480,7 +586,10 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
                 percent_color_temp,
             )
 
-            result = await self._try_command(
+            token = self._set_pending_color_temp(color_temp, percent_color_temp)
+
+            result = await self._try_color_temp_command(
+                token,
                 "Setting brightness and color temperature failed: %s bri, %s cct",
                 self._light.set_brightness_and_color_temperature,
                 percent_brightness,
@@ -488,8 +597,10 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
             )
 
             if result:
-                self._color_temp = color_temp
                 self._brightness = brightness
+            elif result is False:
+                self._clear_pending_color_temp(token)
+                _LOGGER.debug("Color temperature command failed. Waiting for next device state update.")
 
         elif ATTR_COLOR_TEMP_KELVIN in kwargs:
             _LOGGER.debug(
@@ -498,14 +609,18 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
                 percent_color_temp,
             )
 
-            result = await self._try_command(
+            token = self._set_pending_color_temp(color_temp, percent_color_temp)
+
+            result = await self._try_color_temp_command(
+                token,
                 "Setting color temperature failed: %s cct",
                 self._light.set_color_temperature,
                 percent_color_temp,
             )
 
-            if result:
-                self._color_temp = color_temp
+            if result is False:
+                self._clear_pending_color_temp(token)
+                _LOGGER.debug("Color temperature command failed. Waiting for next device state update.")
 
         elif ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs[ATTR_BRIGHTNESS]
@@ -540,13 +655,7 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
         self._available = True
         self._state = state.is_on
         self._brightness = ceil((255 / 100.0) * state.brightness)
-        self._color_temp = self.translate(
-            state.color_temperature,
-            CCT_MIN,
-            CCT_MAX,
-            self.max_color_temp_kelvin,
-            self.min_color_temp_kelvin,
-        )
+        self._update_color_temp_from_state(state.color_temperature)
 
         delayed_turn_off = self.delayed_turn_off_timestamp(
             state.delay_off_countdown,
@@ -580,13 +689,13 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsBulb):
 
     @property
     def min_color_temp_kelvin(self):
-        """Return the coldest color_temp that this light supports."""
-        return 5700
+        """Return the warmest color_temp that this light supports."""
+        return 3000
 
     @property
     def max_color_temp_kelvin(self):
-        """Return the warmest color_temp that this light supports."""
-        return 3000
+        """Return the coldest color_temp that this light supports."""
+        return 5700
 
     async def async_update(self):
         """Fetch state from the device."""
@@ -603,13 +712,7 @@ class XiaomiPhilipsCeilingLamp(XiaomiPhilipsBulb):
         self._available = True
         self._state = state.is_on
         self._brightness = ceil((255 / 100.0) * state.brightness)
-        self._color_temp = self.translate(
-            state.color_temperature,
-            CCT_MIN,
-            CCT_MAX,
-            self.max_color_temp_kelvin,
-            self.min_color_temp_kelvin,
-        )
+        self._update_color_temp_from_state(state.color_temperature)
 
         delayed_turn_off = self.delayed_turn_off_timestamp(
             state.delay_off_countdown,
@@ -823,13 +926,13 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
 
     @property
     def min_color_temp_kelvin(self):
-        """Return the coldest color_temp that this light supports."""
-        return 6600
+        """Return the warmest color_temp that this light supports."""
+        return 1700
 
     @property
     def max_color_temp_kelvin(self):
-        """Return the warmest color_temp that this light supports."""
-        return 1700
+        """Return the coldest color_temp that this light supports."""
+        return 6600
 
     @property
     def hs_color(self) -> tuple:
@@ -849,8 +952,8 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
             color_temp = kwargs[ATTR_COLOR_TEMP_KELVIN]
             percent_color_temp = self.translate(
                 color_temp,
-                self.max_color_temp_kelvin,
                 self.min_color_temp_kelvin,
+                self.max_color_temp_kelvin,
                 CCT_MIN,
                 CCT_MAX,
             )
@@ -892,7 +995,10 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
                 percent_color_temp,
             )
 
-            result = await self._try_command(
+            token = self._set_pending_color_temp(color_temp, percent_color_temp)
+
+            result = await self._try_color_temp_command(
+                token,
                 "Setting brightness and color temperature failed: %s bri, %s cct",
                 self._light.set_brightness_and_color_temperature,
                 percent_brightness,
@@ -900,8 +1006,10 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
             )
 
             if result:
-                self._color_temp = color_temp
                 self._brightness = brightness
+            elif result is False:
+                self._clear_pending_color_temp(token)
+                _LOGGER.debug("Color temperature command failed. Waiting for next device state update.")
 
         elif ATTR_HS_COLOR in kwargs:
             _LOGGER.debug("Setting color: %s", rgb)
@@ -920,14 +1028,18 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
                 percent_color_temp,
             )
 
-            result = await self._try_command(
+            token = self._set_pending_color_temp(color_temp, percent_color_temp)
+
+            result = await self._try_color_temp_command(
+                token,
                 "Setting color temperature failed: %s cct",
                 self._light.set_color_temperature,
                 percent_color_temp,
             )
 
-            if result:
-                self._color_temp = color_temp
+            if result is False:
+                self._clear_pending_color_temp(token)
+                _LOGGER.debug("Color temperature command failed. Waiting for next device state update.")
 
         elif ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs[ATTR_BRIGHTNESS]
@@ -996,13 +1108,8 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
         self._available = True
         self._state = state.is_on
         self._brightness = ceil((255 / 100.0) * state.brightness)
-        self._color_temp = self.translate(
-            state.color_temperature,
-            CCT_MIN,
-            CCT_MAX,
-            self.max_color_temp_kelvin,
-            self.min_color_temp_kelvin,
-        )
+        self._update_color_temp_from_state(state.color_temperature)
+
         self._hs_color = color.color_RGB_to_hs(*state.rgb)
 
         self._state_attrs.update(
