@@ -125,11 +125,35 @@ SERVICE_TO_METHOD = {
     SERVICE_EYECARE_MODE_OFF: {"method": "async_eyecare_mode_off"},
 }
 
+# Which miio wrapper class talks to the device over the network.
+MODEL_TO_DEVICE_CLASS = {
+    "philips.light.sread1": PhilipsEyecare,
+    "philips.light.sread2": PhilipsEyecare,
+    "philips.light.ceiling": Ceil,
+    "philips.light.zyceiling": Ceil,
+    "philips.light.moonlight": PhilipsMoonlight,
+    "philips.light.bulb": PhilipsBulb,
+    "philips.light.candle": PhilipsBulb,
+    "philips.light.candle2": PhilipsBulb,
+    "philips.light.downlight": PhilipsBulb,
+    "philips.light.mono1": PhilipsBulb,
+    "philips.light.hbulb": PhilipsBulb,
+}
+
+EYECARE_MODELS = {"philips.light.sread1", "philips.light.sread2"}
+CEILING_MODELS = {"philips.light.ceiling", "philips.light.zyceiling"}
+BULB_MODELS = {
+    "philips.light.bulb",
+    "philips.light.candle",
+    "philips.light.candle2",
+    "philips.light.downlight",
+}
+GENERIC_MODELS = {"philips.light.mono1", "philips.light.hbulb"}
+
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the light from config."""
-    if DATA_KEY not in hass.data:
-        hass.data[DATA_KEY] = {}
+    hass.data.setdefault(DATA_KEY, {})
 
     host = config[CONF_HOST]
     token = config[CONF_TOKEN]
@@ -139,26 +163,38 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     _LOGGER.info("Initializing with host %s (token %s...)", host, token[:5])
 
-    devices = []
-    unique_id = None
+    # Always fetch device info: needed for unique_id (even when the model is
+    # set explicitly in the config), and for model auto-detection otherwise.
+    try:
+        miio_device = Device(host, token)
+        device_info = await hass.async_add_executor_job(miio_device.info)
+    except DeviceException as ex:
+        raise PlatformNotReady from ex
 
     if model is None:
-        try:
-            miio_device = Device(host, token)
-            device_info = await hass.async_add_executor_job(miio_device.info)
-            model = device_info.model
-            unique_id = f"{model}-{device_info.mac_address}"
-            _LOGGER.info(
-                "%s %s %s detected",
-                model,
-                device_info.firmware_version,
-                device_info.hardware_version,
-            )
-        except DeviceException as ex:
-            raise PlatformNotReady from ex
+        model = device_info.model
+        _LOGGER.info(
+            "%s %s %s detected",
+            model,
+            device_info.firmware_version,
+            device_info.hardware_version,
+        )
 
-    if model in ["philips.light.sread1", "philips.light.sread2"]:
-        light = PhilipsEyecare(host, token)
+    unique_id = f"{model}-{device_info.mac_address}"
+
+    if model not in MODEL_TO_DEVICE_CLASS:
+        _LOGGER.error(
+            "Unsupported device found! Please create an issue at "
+            "https://github.com/syssi/philipslight/issues "
+            "and provide the following data: %s",
+            model,
+        )
+        return False
+
+    light = MODEL_TO_DEVICE_CLASS[model](host, token)
+    devices = []
+
+    if model in EYECARE_MODELS:
         primary_device = XiaomiPhilipsEyecareLamp(name, light, model, unique_id)
         devices.append(primary_device)
         hass.data[DATA_KEY][host] = primary_device
@@ -169,46 +205,34 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         devices.append(secondary_device)
         # The ambient light doesn't expose additional services.
         # A hass.data[DATA_KEY] entry isn't needed.
-    elif model in ["philips.light.ceiling", "philips.light.zyceiling"]:
-        light = Ceil(host, token)
+    elif model in CEILING_MODELS:
         device = XiaomiPhilipsCeilingLamp(name, light, model, unique_id)
         devices.append(device)
         hass.data[DATA_KEY][host] = device
     elif model == "philips.light.moonlight":
-        light = PhilipsMoonlight(host, token)
         device = XiaomiPhilipsMoonlightLamp(
             name, light, model, unique_id, auto_midnight_mode
         )
         devices.append(device)
         hass.data[DATA_KEY][host] = device
-    elif model in [
-        "philips.light.bulb",
-        "philips.light.candle",
-        "philips.light.candle2",
-        "philips.light.downlight",
-    ]:
-        light = PhilipsBulb(host, token)
+    elif model in BULB_MODELS:
         device = XiaomiPhilipsBulb(name, light, model, unique_id)
         devices.append(device)
         hass.data[DATA_KEY][host] = device
-    elif model in [
-        "philips.light.mono1",
-        "philips.light.hbulb",
-    ]:
-        light = PhilipsBulb(host, token)
+    elif model in GENERIC_MODELS:
         device = XiaomiPhilipsGenericLight(name, light, model, unique_id)
         devices.append(device)
         hass.data[DATA_KEY][host] = device
-    else:
-        _LOGGER.error(
-            "Unsupported device found! Please create an issue at "
-            "https://github.com/syssi/philipslight/issues "
-            "and provide the following data: %s",
-            model,
-        )
-        return False
 
     async_add_entities(devices, update_before_add=True)
+
+    _async_register_services(hass)
+
+
+def _async_register_services(hass):
+    """Register domain services (idempotent across multiple platform entries)."""
+    if hass.services.has_service(DOMAIN, SERVICE_SET_SCENE):
+        return
 
     async def async_service_handler(service):
         """Map services to methods on Xiaomi Philips Lights."""
@@ -541,11 +565,11 @@ class XiaomiPhilipsBulb(XiaomiPhilipsGenericLight):
         if ATTR_COLOR_TEMP_KELVIN in kwargs:
             color_temp = kwargs[ATTR_COLOR_TEMP_KELVIN]
             percent_color_temp = self.translate(
-                color_temp,                    # Твой выбор: 5700K
-                self.min_color_temp_kelvin,    # 3000
-                self.max_color_temp_kelvin,    # 5700
-                CCT_MIN,                       # 1
-                CCT_MAX,                       # 100
+                color_temp,
+                self.min_color_temp_kelvin,
+                self.max_color_temp_kelvin,
+                CCT_MIN,
+                CCT_MAX,
             )
 
         if ATTR_BRIGHTNESS in kwargs:
@@ -928,10 +952,10 @@ class XiaomiPhilipsMoonlightLamp(XiaomiPhilipsBulb):
             color_temp = kwargs[ATTR_COLOR_TEMP_KELVIN]
             percent_color_temp = self.translate(
                 color_temp,
-                self.min_color_temp_kelvin,  # 1700
-                self.max_color_temp_kelvin,  # 6600
-                CCT_MIN,                     # 1
-                CCT_MAX,                     # 100
+                self.min_color_temp_kelvin,
+                self.max_color_temp_kelvin,
+                CCT_MIN,
+                CCT_MAX,
             )
 
         if ATTR_BRIGHTNESS in kwargs:
